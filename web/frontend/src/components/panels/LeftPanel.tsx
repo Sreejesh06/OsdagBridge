@@ -1,5 +1,6 @@
 import { useState } from "react";
-
+import { useBridgeStore } from "../../store/bridgeStore";
+import { analyzeBridge } from "../../services/api";
 
 type Props = {
   onOpenAdditionalInputs: () => void;
@@ -9,6 +10,14 @@ export default function LeftPanel({
   onOpenAdditionalInputs,
 }: Props) {
   const [tab, setTab] = useState<"basic" | "additional">("basic");
+  const {
+    bridgeInput,
+    updateBridgeInput,
+    setAnalysisResult,
+    setHasDesigned,
+    setSvgUrl,
+  } = useBridgeStore();
+  
 
   const green = "#8DB600";
   const border = "#9dbb2e";
@@ -98,11 +107,29 @@ export default function LeftPanel({
   <InnerSection title="Geometric Details">
 
     <Row label="Span*">
-      <input className="input" placeholder="20.0-45.0 m" />
+    <input
+  className="input"
+  value={bridgeInput.span_length}
+  onChange={(e) =>
+    updateBridgeInput(
+      "span_length",
+      Number(e.target.value)
+    )
+  }
+/>
     </Row>
 
     <Row label="Carriageway Width*">
-      <input className="input" placeholder="4.25 - 23.6 m" />
+    <input
+  className="input"
+  value={bridgeInput.width}
+  onChange={(e) =>
+    updateBridgeInput(
+      "width",
+      Number(e.target.value)
+    )
+  }
+/>
     </Row>
 
     <Row label="Include Median">
@@ -118,8 +145,17 @@ export default function LeftPanel({
     </Row>
 
     <Row label="Skew Angle">
-      <input className="input" placeholder="-15.0 - 15.0°" />
-    </Row>
+  <input
+    className="input"
+    value={bridgeInput.skew_angle}
+    onChange={(e) =>
+      updateBridgeInput(
+        "skew_angle",
+        Number(e.target.value)
+      )
+    }
+  />
+</Row>
 
     <Row label="Additional Geometry">
       <button className="greenBtn">
@@ -193,17 +229,49 @@ export default function LeftPanel({
         </button>
 
         <button
-          className="greenBtn"
-          style={{
-            flex: 1,
-            height: "40px",
-            color: "white",
-            fontSize: "15px",
-            borderRadius: "14px",
-          }}
-        >
-          🛠 Design
-        </button>
+  className="greenBtn"
+  style={{
+    flex: 1,
+    height: "40px",
+    color: "white",
+    fontSize: "15px",
+    borderRadius: "14px",
+  }}
+  onClick={async () => {
+    try {
+  
+      await fetch(
+        "http://127.0.0.1:8000/cross-section/generate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bridgeInput),
+        }
+      );
+  
+      const result = await analyzeBridge(
+        bridgeInput
+      );
+  
+      setAnalysisResult(result);
+  
+      setSvgUrl(
+        `http://127.0.0.1:8000/cross-section/svg?t=${Date.now()}`
+      );
+  
+      setHasDesigned(true);
+  
+      console.log(result);
+  
+    } catch (err) {
+      console.error(err);
+    }
+  }}
+>
+  Design
+</button>
       </div>
 
       <style>

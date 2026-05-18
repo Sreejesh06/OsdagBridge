@@ -1,1 +1,0 @@
-"""truss report generator (stub)."""

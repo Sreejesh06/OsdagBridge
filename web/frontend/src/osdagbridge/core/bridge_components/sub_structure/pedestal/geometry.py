@@ -1,1 +1,0 @@
-"""Pedestal geometry stub."""

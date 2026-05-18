@@ -1,1 +1,0 @@
-"""Pier cap geometry stub."""

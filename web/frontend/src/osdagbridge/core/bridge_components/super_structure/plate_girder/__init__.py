@@ -1,1 +1,0 @@
-"""Girder component package."""

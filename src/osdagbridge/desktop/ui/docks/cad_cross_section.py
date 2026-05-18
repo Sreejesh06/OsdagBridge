@@ -6,8 +6,10 @@ Author: Arushi
 
 import math
 from PySide6.QtWidgets import QWidget, QPushButton, QScrollArea
-from PySide6.QtCore import Qt, QRectF, QPointF, QTimer, QSize
-from PySide6.QtGui import QPainter, QPen, QColor, QFont, QBrush, QPolygonF, QIcon, QPixmap
+from PySide6.QtCore import Qt, QRectF,QPoint, QPointF, QTimer, QSize
+from PySide6.QtGui import QPainter, QPen, QColor, QFont, QBrush, QPolygonF, QIcon, QPixmap, QRegion
+from PySide6.QtSvg import QSvgGenerator
+from PySide6.QtCore import QByteArray, QBuffer, QIODevice
 from osdagbridge.desktop.cad.irc5_geometry import (
     CrashBarrierGeometry,
     RailingGeometry,
@@ -521,30 +523,53 @@ class CrossSectionCADWidget(QWidget):
         QTimer.singleShot(0, self._center_horizontal_scroll)
     
     def mouseMoveEvent(self, event):
-        """Handle mouse hover for both labels and structural elements"""
         pos = event.position() if hasattr(event, 'position') else event.pos()
-        
-        # Check label hover first
-        new_hovered = -1
-        for i, (rect, text, bg_color, text_color) in enumerate(self.hover_labels):
+
+        # Sort zones smallest-area first so specific zones beat large background ones
+        sorted_zones = sorted(
+            self.cross_section_hover_zones,
+            key=lambda z: z[0].width() * z[0].height()
+        )
+
+        # Find the single best-match zone
+        hit_type = None
+        for rect, element_type in sorted_zones:
             if rect.contains(pos):
-                new_hovered = i
+                hit_type = element_type
                 break
-        
-        if new_hovered != self.hovered_label_index:
-            self.hovered_label_index = new_hovered
+
+        # ── Update element highlight (fill color changes) ──
+        if hit_type != self.hovered_element:
+            self.hovered_element = hit_type
             self.update()
-        
-        # Check element hover
-        new_hovered_element = None
-        for rect, element_type in self.cross_section_hover_zones:
-            if rect.contains(pos):
-                new_hovered_element = element_type
-                break
-        
-        if new_hovered_element != self.hovered_element:
-            self.hovered_element = new_hovered_element
+
+        # ── Update label (dotted leader line) ──
+        # Match hit_type back to the hover_labels list by element type
+        new_label_index = -1
+        if hit_type is not None:
+            # hover_labels order mirrors components order in add_cross_section_hover_labels
+            # Each entry is (rect, name, bg, fg) — find first name match for hit_type
+            TYPE_TO_LABEL = {
+                'deck': 'Deck',
+                'wearing_course': 'Wearing Course',
+                'crash_barrier': 'Crash Barrier',
+                'footpath': 'Footpath',
+                'railing': 'Railing',
+                'median': 'Median',
+                'girder': 'Girder',
+                'cross_bracing': 'Cross Bracing',
+            }
+            target_name = TYPE_TO_LABEL.get(hit_type, '')
+            for i, (rect, name, bg, fg) in enumerate(self.hover_labels):
+                if name == target_name:
+                    new_label_index = i
+                    break
+
+        if new_label_index != self.hovered_label_index:
+            self.hovered_label_index = new_label_index
             self.update()
+
+        self.setCursor(Qt.PointingHandCursor if hit_type else Qt.ArrowCursor)
 
         
     def paintEvent(self, event):
@@ -2118,6 +2143,7 @@ class CrossSectionCADWidget(QWidget):
         deck_rect = QRectF(deck_slab_left, deck_top_y, deck_slab_right - deck_slab_left, deck_thick_px)
         deck_center_x = (deck_slab_left + deck_slab_right) / 2
         components.append((deck_rect, "Deck", deck_center_x, deck_bottom_y, 'straight_line', None))
+        self.cross_section_hover_zones.append((deck_rect, 'deck'))
         
         # Left crash barrier - text on top of figure
         left_cb_rect = QRectF(left_barrier_x, deck_top_y - cb_height,
@@ -2140,7 +2166,7 @@ class CrossSectionCADWidget(QWidget):
             fp_center_x = (left_fp_x + railing_width_px + left_barrier_x) / 2
             fp_center_y = fp_top_y + fp_thick_px / 2
             components.append((left_fp_rect, "Footpath", fp_center_x, fp_center_y, 'tilted_line_left', None))
-        
+            self.cross_section_hover_zones.append((left_fp_rect, 'footpath'))
         # Right footpath - straight line same level as deck
         if fp_config in ['right', 'both'] and right_fp_width > 0 and fp_thick_px > 5:
             # Right footpath starts at right_barrier_end_x and ends at deck_right_x
@@ -2149,7 +2175,7 @@ class CrossSectionCADWidget(QWidget):
             fp_center_x = (right_barrier_end_x + deck_right_x - railing_width_px) / 2
             fp_center_y = fp_top_y + fp_thick_px / 2
             components.append((right_fp_rect, "Footpath", fp_center_x, fp_center_y, 'straight_line', None))
-        
+            self.cross_section_hover_zones.append((right_fp_rect, 'footpath'))
         # Left railing - text on top of figure
         if left_railing_rect is not None:
             railing_rect = QRectF(left_railing_rect[0], left_railing_rect[1],
@@ -2157,7 +2183,7 @@ class CrossSectionCADWidget(QWidget):
             railing_center_x = left_railing_rect[0] + left_railing_rect[4] / 2
             railing_top_y = left_railing_rect[1]
             components.append((railing_rect, "Railing", railing_center_x, railing_top_y, 'on_figure_top', None))
-        
+            self.cross_section_hover_zones.append((railing_rect, 'railing'))
         # Right railing - text on top of figure
         if right_railing_rect is not None:
             railing_rect = QRectF(right_railing_rect[0], right_railing_rect[1],
@@ -2165,7 +2191,7 @@ class CrossSectionCADWidget(QWidget):
             railing_center_x = right_railing_rect[0] + right_railing_rect[4] / 2
             railing_top_y = right_railing_rect[1]
             components.append((railing_rect, "Railing", railing_center_x, railing_top_y, 'on_figure_top', None))
-        
+            self.cross_section_hover_zones.append((railing_rect, 'railing'))
         # Median - text on top of figure (like railing or crash barrier)
         if median_present and median_start_x is not None:
             # Get actual median height for correct label positioning
@@ -2220,7 +2246,7 @@ class CrossSectionCADWidget(QWidget):
                     center_x = (x1 + x2) / 2
                     components.append((bracing_rect, "Cross Bracing",
                                     center_x, base_y - girder_depth_visual / 2, 'lower_pointer', None))
-        
+                    self.cross_section_hover_zones.append((bracing_rect, 'cross_bracing'))
         # Register all for hover detection
         for rect, name, tx, ty, ltype, extra in components:
             self.hover_labels.append((rect, name, QColor(255, 255, 255, 255), QColor(60, 60, 60)))
@@ -2723,3 +2749,97 @@ class CrossSectionCADWidget(QWidget):
         if self.median_type == "Custom":
             return "IRC 5 - Raised Kerb"
         return self.median_type
+    
+    def export_svg(self):
+        generator = QSvgGenerator()
+
+        svg_data = QByteArray()
+
+        buffer = QBuffer(svg_data)
+        buffer.open(QIODevice.WriteOnly)
+
+        generator.setOutputDevice(buffer)
+
+        content_rect = QRectF(
+            0,
+            0,
+            self.width(),
+            self.height()
+        )
+        from PySide6.QtCore import QSize
+        generator.setViewBox(content_rect.toRect())
+
+        generator.setSize(
+            QSize(
+                int(content_rect.width()),
+                 int(content_rect.height())
+            )
+        )
+
+        painter = QPainter(generator)
+
+        self.render(
+            painter,
+            QPoint(),
+            QRegion(content_rect.toRect())
+        )
+
+        painter.end()
+
+        buffer.close()
+
+        return bytes(svg_data).decode("utf-8")
+    
+    def export_hover_zones(self) -> dict:
+        """
+        Export hover zones as JSON-serializable dict for the /hover-zones endpoint.
+    
+        The widget must be rendered at least once before calling this,
+        so cross_section_hover_zones is populated.
+        If not yet rendered, force a render into an offscreen buffer first.
+        """
+        # If no zones yet, force a render so zones get populated
+        if not self.cross_section_hover_zones:
+            # Render into a temporary offscreen pixmap to trigger paintEvent
+            from PySide6.QtGui import QPixmap
+            pixmap = QPixmap(max(self.width(), 1000), max(self.height(), 600))
+            pixmap.fill(QColor(255, 255, 255))
+            painter = QPainter(pixmap)
+            try:
+                painter.setRenderHint(QPainter.Antialiasing)
+                # Reset lists so draw_cross_section populates them fresh
+                self.hover_labels = []
+                self.cross_section_hover_zones = []
+                self.draw_cross_section(painter)
+            except Exception as e:
+                print(f"export_hover_zones render error: {e}")
+            finally:
+                painter.end()
+
+        zones = []
+        for rect, element_type in self.cross_section_hover_zones:
+            # Map internal type to human-readable label
+            LABEL_MAP = {
+                'deck':          'Deck Slab',
+                'wearing_course':'Wearing Course',
+                'girder':        'Girder',
+                'crash_barrier': 'Crash Barrier',
+                'railing':       'Railing',
+                'footpath':      'Footpath',
+                'median':        'Median',
+                'cross_bracing': 'Cross Bracing',
+            }
+            zones.append({
+                'x':      rect.x(),
+                'y':      rect.y(),
+                'width':  rect.width(),
+                'height': rect.height(),
+                'type':   element_type,
+                'label':  LABEL_MAP.get(element_type, element_type.replace('_', ' ').title()),
+            })
+
+        return {
+            'widget_width':  self.width(),
+            'widget_height': self.height(),
+            'zones':         zones,
+        }

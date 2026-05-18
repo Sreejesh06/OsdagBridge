@@ -1,1 +1,0 @@
-"""Crash barrier package."""

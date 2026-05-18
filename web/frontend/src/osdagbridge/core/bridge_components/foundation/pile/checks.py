@@ -1,1 +1,0 @@
-"""Pile checks stub."""

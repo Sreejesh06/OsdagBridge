@@ -1,1 +1,0 @@
-"""Footpath component package."""

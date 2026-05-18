@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { useBridgeStore } from "../../store/bridgeStore";
 
 export default function RightPanel() {
   const green = "#8cab1a";
   const border = "#9dbb2e";
-
+  const { analysisResult } = useBridgeStore();
   const [analysisOpen, setAnalysisOpen] = useState(true);
   const [designOpen, setDesignOpen] = useState(true);
   const [superOpen, setSuperOpen] = useState(true);
@@ -67,6 +68,34 @@ export default function RightPanel() {
           <CheckGrid items={["Max", "Min"]} />
 
           <CheckRow label="Controlling Utilization Ratio" />
+          {analysisResult && (
+  <div
+    style={{
+      marginTop: "20px",
+      fontSize: "13px",
+      borderTop: "1px solid #ccc",
+      paddingTop: "10px",
+    }}
+  >
+    <div>
+      Max Moment:
+      {" "}
+      {analysisResult.maxMoment}
+    </div>
+
+    <div>
+      Max Shear:
+      {" "}
+      {analysisResult.maxShear}
+    </div>
+
+    <div>
+      Max Displacement:
+      {" "}
+      {analysisResult.maxDisplacement}
+    </div>
+  </div>
+)}
         </Section>
 
         {/* DESIGN */}
