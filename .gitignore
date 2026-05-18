@@ -257,4 +257,6 @@ src/osdag_map_cache/
 # Project-specific ignores
 ospgrillage/
 temp_plot.html
-*.html
+*.htmlnode_modules/
+.vite/
+web/frontend/node_modules/
