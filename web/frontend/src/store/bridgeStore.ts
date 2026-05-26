@@ -14,81 +14,70 @@ type AnalysisResult = {
   status: string;
 };
 
-type BridgeStore = {
-  bridgeInput: BridgeInput;
-
-  hoveredElement: string | null;
-
-  setHoveredElement: (
-    element: string | null
-  ) => void;
-
-  analysisResult: AnalysisResult | null;
-
-  hasDesigned: boolean;
-
-  svgUrl: string;
-
-  updateBridgeInput: (
-    key: keyof BridgeInput,
-    value: number
-  ) => void;
-
-  setAnalysisResult: (
-    result: AnalysisResult
-  ) => void;
-
-  setHasDesigned: (
-    value: boolean
-  ) => void;
-
-  setSvgUrl: (
-    url: string
-  ) => void;
+// BridgeData covers all additional inputs persisted across modal open/close
+type BridgeData = {
+  girder_spacing?:       number;
+  no_of_girders?:        number;
+  deck_overhang_width?:  number;
+  overall_bridge_width?: number;
+  deck_thickness?:       number;
+  footpath_thickness?:   number;
+  footpath_width?:       number;
+  [key: string]: unknown; // allow extra fields from backend
 };
 
-export const useBridgeStore =
-  create<BridgeStore>((set) => ({
-    bridgeInput: {
-      span_length: 35,
-      width: 12,
-      num_girders: 4,
-      skew_angle: 0,
-    },
+type BridgeStore = {
+  bridgeInput:  BridgeInput;
+  bridgeData:   BridgeData | null;
+  analysisResult: AnalysisResult | null;
+  hasDesigned:  boolean;
+  svgUrl:       string;
+  hoveredElement: string | null;
 
-    hoveredElement: null,
+  updateBridgeInput:  (key: keyof BridgeInput, value: number) => void;
+  setBridgeData:      (data: BridgeData) => void;
+  setAnalysisResult:  (result: AnalysisResult) => void;
+  setHasDesigned:     (value: boolean) => void;
+  setSvgUrl:          (url: string) => void;
+  setHoveredElement:  (element: string | null) => void;
+};
 
-    analysisResult: null,
+export const useBridgeStore = create<BridgeStore>((set) => ({
+  bridgeInput: {
+    span_length: 35,
+    width:       12,
+    num_girders: 4,
+    skew_angle:  0,
+  },
 
-    hasDesigned: false,
+  bridgeData: {
+    girder_spacing:       4,
+    no_of_girders:        4,
+    deck_overhang_width:  1,
+    overall_bridge_width: 12,
+    deck_thickness:       250,
+    footpath_thickness:   150,
+    footpath_width:       1.5,
+  },
 
-    svgUrl: "",
+  analysisResult:  null,
+  hasDesigned:     false,
+  svgUrl:          "",
+  hoveredElement:  null,
 
-    updateBridgeInput: (key, value) =>
-      set((state) => ({
-        bridgeInput: {
-          ...state.bridgeInput,
-          [key]: value,
-        },
-      })),
+  updateBridgeInput: (key, value) =>
+    set((state) => ({
+      bridgeInput: { ...state.bridgeInput, [key]: value },
+    })),
 
-    setHoveredElement: (element) =>
-      set({
-        hoveredElement: element,
-      }),
+  setBridgeData: (data) => set({ bridgeData: data }),
 
-    setAnalysisResult: (result) =>
-      set({
-        analysisResult: result,
-      }),
+  setAnalysisResult: (result) => set({ analysisResult: result }),
 
-    setHasDesigned: (value) =>
-      set({
-        hasDesigned: value,
-      }),
+  setHasDesigned: (value) => set({ hasDesigned: value }),
 
-    setSvgUrl: (url) =>
-      set({
-        svgUrl: url,
-      }),
-  }));
+  // Updating svgUrl causes CrossSectionCanvas on the dashboard to re-fetch
+  setSvgUrl: (url) => set({ svgUrl: url }),
+
+  setHoveredElement: (element) => set({ hoveredElement: element }),
+}));

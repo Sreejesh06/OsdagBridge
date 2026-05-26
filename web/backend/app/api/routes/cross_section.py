@@ -1,70 +1,185 @@
+# app/routers/cross_section.py  (replace your existing file)
+
 from fastapi import APIRouter
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from PySide6.QtWidgets import QApplication
 
 from app.models.bridge import BridgeInput
-from fastapi.responses import JSONResponse
-from osdagbridge.desktop.ui.docks.cad_cross_section import (
-    CrossSectionCADWidget,
-)
+from osdagbridge.desktop.ui.docks.cad_cross_section import CrossSectionCADWidget
 
 router = APIRouter(prefix="/cross-section", tags=["Cross Section"])
 
-app_qt = QApplication.instance()
+# ── Ensure a Qt application exists (headless) ────────────────────────────────
+_qt_app = QApplication.instance() or QApplication([])
 
-if not app_qt:
-    app_qt = QApplication([])
+# ── Single persistent widget instance ────────────────────────────────────────
+_widget: CrossSectionCADWidget | None = None
 
-current_widget = None
+RENDER_W = 1400
+RENDER_H = 700
 
+
+def _get_or_create_widget() -> CrossSectionCADWidget:
+    global _widget
+    if _widget is None:
+        _widget = CrossSectionCADWidget()
+        _widget.resize(RENDER_W, RENDER_H)
+    return _widget
+
+
+def _build_params(data: BridgeInput) -> dict:
+
+    # ---- FRONTEND VALUES COME IN METERS ----
+    # Convert ONLY geometric width values to mm
+
+    overall_width_mm = (
+        (data.overall_bridge_width * 1000)
+        if data.overall_bridge_width
+        else (
+            (data.width * 1000)
+            if data.width
+            else 12000
+        )
+    )
+
+    carriageway_mm = (
+        (data.carriageway_width * 1000)
+        if data.carriageway_width
+        else overall_width_mm
+    )
+
+    girder_spacing_mm = (
+        (data.girder_spacing * 1000)
+        if data.girder_spacing
+        else 2750
+    )
+
+    deck_overhang_mm = (
+        (data.deck_overhang_width * 1000)
+        if data.deck_overhang_width
+        else 1000
+    )
+
+    footpath_width_mm = (
+        (data.footpath_width * 1000)
+        if data.footpath_width
+        else 1500
+    )
+
+    # ---- THESE ARE ALREADY IN MM ----
+
+    deck_thickness_mm = data.deck_thickness or 200
+
+    footpath_thickness_mm = (
+        data.footpath_thickness or 200
+    )
+
+    params = {
+        "span_length":
+            (data.span_length or 35000),
+
+        "carriageway_width":
+            carriageway_mm,
+
+        "num_girders":
+            data.no_of_girders or 4,
+
+        "girder_spacing":
+            girder_spacing_mm,
+
+        "deck_overhang":
+            deck_overhang_mm,
+
+        "deck_thickness":
+            deck_thickness_mm,
+
+        "footpath_width":
+            footpath_width_mm,
+
+        "footpath_thickness":
+            footpath_thickness_mm,
+
+        "skew_angle":
+            data.skew_angle or 0,
+
+        "median_present":
+            data.median_present or False,
+
+        "median_width":
+            data.median_width or 1200,
+
+        "crash_barrier_width":
+            data.crash_barrier_width or 500,
+
+        "railing_width":
+            data.railing_width or 375,
+
+        "railing_height":
+            data.railing_height or 1000,
+
+        "wearing_course_thickness":
+            data.wearing_course_thickness or 50,
+    }
+
+    return params
+
+
+# ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.post("/generate")
 def generate_cross_section(data: BridgeInput):
-    global current_widget
+    """
+    Receive bridge parameters, update the widget, re-render SVG + hover zones.
+    Frontend calls this on every debounced form change and on Save.
+    """
+    widget = _get_or_create_widget()
+    params = _build_params(data)
 
-    widget = CrossSectionCADWidget()
+    # Push params into the widget — this triggers internal state update
+    widget.update_params(params)
 
-    # Example dynamic inputs
-    # Replace with actual widget setters later
+    # Force a synchronous re-render at the fixed export size so SVG + zones
+    # are in sync before the frontend fetches /svg and /hover-zones
+    svg = widget.export_svg()
+    zones = widget.export_hover_zones()
 
-    if hasattr(widget, "span"):
-        widget.span = data.span
+    # Cache on the widget so /hover-zones can serve instantly without re-render
+    widget._cached_zones = zones
+    widget._cached_svg   = svg
 
-    if hasattr(widget, "carriageway_width"):
-        widget.carriageway_width = data.carriageway_width
-
-    widget.resize(1400, 900)
-
-    current_widget = widget
-
-    return {"status": "generated"}
+    return {"status": "generated", "zone_count": len(zones.get("zones", []))}
 
 
 @router.get("/svg")
 def get_cross_section_svg():
+    """Return the most recently generated SVG."""
+    widget = _get_or_create_widget()
 
-    global current_widget
+    # Serve cached SVG if available (set by /generate)
+    svg = getattr(widget, "_cached_svg", None)
+    if not svg:
+        # Fallback: render now with current params
+        svg = widget.export_svg()
+        zones = widget.export_hover_zones()
+        widget._cached_zones = zones
+        widget._cached_svg   = svg
 
-    if current_widget is None:
-        current_widget = CrossSectionCADWidget()
-        current_widget.resize(1400, 900)
+    return Response(content=svg, media_type="image/svg+xml",
+                    headers={"Cache-Control": "no-store"})
 
-    svg_content = current_widget.export_svg()
 
-    return Response(
-        content=svg_content,
-        media_type="image/svg+xml"
-    )
-    
 @router.get("/hover-zones")
 def get_hover_zones():
+    """Return hover zone data for the most recently generated SVG."""
+    widget = _get_or_create_widget()
 
-    global current_widget
+    zones = getattr(widget, "_cached_zones", None)
+    if zones is None:
+        # Fallback: render to get zones
+        svg = widget.export_svg()
+        zones = widget.export_hover_zones()
+        widget._cached_svg   = svg
+        widget._cached_zones = zones
 
-    if current_widget is None:
-        return JSONResponse(
-            status_code=404,
-            content={"error": "Cross-section widget not initialized"}
-        )
-
-    return current_widget.export_hover_zones()
+    return JSONResponse(content=zones,
+                        headers={"Cache-Control": "no-store"})

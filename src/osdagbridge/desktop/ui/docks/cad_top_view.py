@@ -173,12 +173,13 @@ class TopViewCADWidget(QWidget):
         
         # Set minimum size for visibility (reduced for better shrinking)
         self.setMinimumSize(400, 300)
+        self.resize(1400, 700)
 
     def showEvent(self, event):
         """Standardize size and center after widget is shown"""
         super().showEvent(event)
         # DEFAULT: Fit to Screen on startup
-        QTimer.singleShot(200, self.fit_to_screen)
+        QTimer.singleShot(200, self.zoom_reset)
         # Position zoom buttons
         self._position_zoom_buttons()
     
@@ -223,7 +224,7 @@ class TopViewCADWidget(QWidget):
         total_model_width = max(total_model_width, 1.0)
 
         # Base dimensions from draw_top_view
-        base_w, base_h = 900, 750
+        base_w, base_h = 1400, 700
         margin = 60
         avail_base_w = base_w - 2 * margin
         avail_base_h = base_h - 2 * margin - 60
@@ -243,7 +244,7 @@ class TopViewCADWidget(QWidget):
             vp_w, vp_h = max(self.width(), 400), max(self.height(), 300)
 
         # Apply padding (~8%)
-        PADDING = 0.15
+        PADDING = 0.04
         avail_vp_w = vp_w * (1.0 - 2 * PADDING)
         avail_vp_h = vp_h * (1.0 - 2 * PADDING)
 
@@ -358,7 +359,7 @@ class TopViewCADWidget(QWidget):
             total_model_width = 2 * self.params.get('deck_overhang', 1000)
         total_model_width = max(total_model_width, 1.0)
 
-        base_w_internal, base_h_internal = 900, 750
+        base_w_internal, base_h_internal = 1400, 700
         margin = 60
         avail_base_w = base_w_internal - 2 * margin
         avail_base_h = base_h_internal - 2 * margin - 60
@@ -458,7 +459,8 @@ class TopViewCADWidget(QWidget):
             self.show_carriageway_values = True
 
         self.show_dimensions = True
-        self.zoom_reset() # Auto-fit height on parameter change
+        #self.zoom_reset() # Auto-fit height on parameter change
+        self._update_widget_size()
         self.update()
     
     def mouseMoveEvent(self, event):
@@ -492,6 +494,7 @@ class TopViewCADWidget(QWidget):
 
         # defensive check: font size must be > 0
         font_size = max(1, font_size)
+        font_size = int(font_size * max(self.zoom_level, 1.0))
         font_weight = QFont.Bold if bold else QFont.Normal
         font = QFont('Arial', font_size, font_weight)
         painter.setFont(font)
@@ -585,7 +588,7 @@ class TopViewCADWidget(QWidget):
             text_x = (x1 + x2) / 2
             text_y = y1 - 8 + text_offset if offset >= 0 else y1 + 15 + text_offset
             
-            font = QFont('Arial', 9, QFont.Normal)
+            font = QFont('Arial', 11, QFont.Normal)
             metrics = painter.fontMetrics()
             text_width = metrics.boundingRect(text).width()
             
@@ -624,7 +627,7 @@ class TopViewCADWidget(QWidget):
             text_y = (y1 + y2) / 2 + 3
             
             self.draw_text_with_background(painter, text_x, text_y, text,
-                                        QColor(255, 255, 255, 240), QColor(0, 0, 0), 9, False)
+                                        QColor(255, 255, 255, 240), QColor(0, 0, 0), 11, False)
     
     def draw_dimension_arrow_text_outside(self, painter, x1, y1, x2, y2, text, horizontal=True, 
                                           text_side='right', text_offset=15):
@@ -664,13 +667,13 @@ class TopViewCADWidget(QWidget):
                 text_x = (x1 + x2) / 2
                 text_y = y1 + text_offset + 10
                 
-            font = QFont('Arial', 9, QFont.Normal)
+            font = QFont('Arial', 11, QFont.Normal)
             painter.setFont(font)
             metrics = painter.fontMetrics()
             text_width = metrics.boundingRect(text).width()
             
             self.draw_text_with_background(painter, text_x - text_width/2, text_y, text, 
-                                        QColor(255, 255, 255, 240), QColor(0, 0, 0), 9, False)
+                                        QColor(255, 255, 255, 240), QColor(0, 0, 0), 11, False)
         else:
             painter.drawLine(QPointF(x1 - ext_len, y1), QPointF(x1 + ext_len, y1))
             painter.drawLine(QPointF(x2 - ext_len, y2), QPointF(x2 + ext_len, y2))
@@ -698,7 +701,7 @@ class TopViewCADWidget(QWidget):
                 text_x = x1 + text_offset
             
             self.draw_text_with_background(painter, text_x, text_y, text,
-                                        QColor(255, 255, 255, 240), QColor(0, 0, 0), 9, False)
+                                        QColor(255, 255, 255, 240), QColor(0, 0, 0), 11, False)
         
     def draw_leader_arrow(self, painter, from_x, from_y, to_x, to_y, text, bg_color=QColor(255, 255, 255, 250), text_color=QColor(0, 0, 0)):
         """a leader line with arrow pointing to component"""
@@ -726,7 +729,7 @@ class TopViewCADWidget(QWidget):
         painter.setBrush(QBrush(QColor(0, 0, 0)))
         painter.drawPolygon(QPolygonF(arrow_points))
         
-        self.draw_text_with_background(painter, from_x - 5, from_y - 5, text, bg_color, text_color, 9, False)
+        self.draw_text_with_background(painter, from_x - 5, from_y - 5, text, bg_color, text_color, 11, False)
     
     def draw_clean_leader_line(self, painter, target_x, target_y, label_x, label_y, text, 
                                 text_color=QColor(0, 0, 0), line_color=QColor(100, 100, 100)):
@@ -742,7 +745,7 @@ class TopViewCADWidget(QWidget):
         painter.drawEllipse(QPointF(target_x, target_y), 3, 3)
         
         # Draw text at label position
-        font = QFont('Arial', 9, QFont.Normal)
+        font = QFont('Arial', 11, QFont.Normal)
         painter.setFont(font)
         metrics = painter.fontMetrics()
         text_width = metrics.boundingRect(text).width()
@@ -758,7 +761,7 @@ class TopViewCADWidget(QWidget):
         
         # Draw text with background
         self.draw_text_with_background(painter, text_x, text_y, text,
-                                       QColor(255, 255, 255, 240), text_color, 9, False)
+                                       QColor(255, 255, 255, 240), text_color, 11, False)
     
     def compute_deck_total_width(self):
         """Compute total deck width including median if present"""
@@ -898,8 +901,9 @@ class TopViewCADWidget(QWidget):
         BEARING_HIGHLIGHT = CAD_HOVER_GREY
         
         # Use base canvas dimensions for consistent drawing regardless of zoom
-        width = 900 * self.zoom_level
-        height = 750 * self.zoom_level
+        # Use actual widget size
+        width = self.width()
+        height = self.height()
 
         # Reduced margins for better space utilization in split view
         margin = 60
@@ -940,6 +944,12 @@ class TopViewCADWidget(QWidget):
         span_length_px = self.params['span_length'] * scale
         start_x_base = center_x - span_length_px / 2
         end_x_base = center_x + span_length_px / 2
+        
+        # account for skew extra width
+        skew_extra = abs(math.tan(skew_rad)) * total_model_width * scale
+
+        start_x_base += skew_extra / 2
+        end_x_base -= skew_extra / 2
 
         # Check hover states
         girder_hovered = self.hovered_top_view_element == 'girder'
@@ -1244,7 +1254,7 @@ class TopViewCADWidget(QWidget):
             angle_text,
             QColor(255, 255, 255, 240),
             QColor(0, 0, 0),
-            9, True)
+            11, True)
 
 
     def add_clean_top_view_dimensions(self, painter, girder_lines, girder_positions_y,
@@ -1333,7 +1343,7 @@ class TopViewCADWidget(QWidget):
                 painter, label_x, label_y,
                 label_text,
                 QColor(255, 255, 255, 240),
-                QColor(0, 0, 0), 9, False
+                QColor(0, 0, 0), 11, False
             )
 
         # CL OF BEARING labels - ALWAYS VISIBLE (moved outside hover condition)
@@ -1344,11 +1354,11 @@ class TopViewCADWidget(QWidget):
         
         self.draw_text_with_background(painter, left_label_x, label_y_bearing,
                                     "CL of Bearing", QColor(255, 255, 255, 240),
-                                    QColor(0, 0 ,0), 9, False)
+                                    QColor(0, 0 ,0), 11, False)
         
         self.draw_text_with_background(painter, right_label_x, label_y_bearing,
                                     "CL of Bearing", QColor(255, 255, 255, 240),
-                                    QColor(0, 0 ,0), 9, False)
+                                    QColor(0, 0 ,0), 11, False)
 
         # HOVER LABELS (only shown when hovered) 
         
@@ -1455,13 +1465,13 @@ class TopViewCADWidget(QWidget):
         text_x = (x1 + x2) / 2
         text_y = y1 - 6
         
-        font = QFont('Arial', 9, QFont.Normal)
+        font = QFont('Arial', 11, QFont.Normal)
         painter.setFont(font)
         metrics = painter.fontMetrics()
         text_width = metrics.boundingRect(text).width()
         
         self.draw_text_with_background(painter, text_x - text_width/2, text_y, text, 
-                                    QColor(255, 255, 255, 240), QColor(0, 0, 0), 9, False)
+                                    QColor(255, 255, 255, 240), QColor(0, 0, 0), 11, False)
 
 
     def draw_skewed_dimension_arrow(self, painter, x1, y1, x2, y2, text, skew_rad):
@@ -1533,7 +1543,7 @@ class TopViewCADWidget(QWidget):
         text_y = mid_y
         
         self.draw_text_with_background(painter, text_x, text_y, text,
-                                    QColor(255, 255, 255, 240), QColor(0, 0, 0), 9, False)
+                                    QColor(255, 255, 255, 240), QColor(0, 0, 0), 11, False)
 
     def add_clean_top_view_notes(self, painter, height):
         """Add professional notes"""
@@ -1541,7 +1551,7 @@ class TopViewCADWidget(QWidget):
         
         self.draw_text_with_background(painter, 30, notes_y + 5,
                                     "NOTES:", QColor(240, 245, 250, 250),
-                                    QColor(0, 0, 0), 9, True)
+                                    QColor(0, 0, 0), 11, True)
         
         notes = [
             f"1. Green lines: Girders (Qty = {self.params['num_girders']})",
@@ -1552,9 +1562,76 @@ class TopViewCADWidget(QWidget):
             f"6. All dimensions in meters",
         ]
         
-        painter.setFont(QFont('Arial', 9))
+        painter.setFont(QFont('Arial', 11))
         painter.setPen(QPen(QColor(40, 40, 40), 1))
         
         for i, note in enumerate(notes):
             note_y = notes_y + 22 + i * 13
             painter.drawText(32, note_y, note)
+            
+
+
+    def export_svg(self):
+        """
+        Export the current top view as an SVG string.
+        Paints at a fixed 900×750 canvas so the frontend always gets a known size.
+        """
+        from PySide6.QtCore import QPoint, QRect, QSize, QByteArray, QBuffer, QIODevice
+        from PySide6.QtGui import QPainter
+        from PySide6.QtSvg import QSvgGenerator
+ 
+        BASE_W, BASE_H = 1400, 700          # must match SVG_W / SVG_H in TopViewCanvas.tsx
+ 
+        svg_data = QByteArray()
+        buffer   = QBuffer(svg_data)
+        buffer.open(QIODevice.WriteOnly)
+ 
+        generator = QSvgGenerator()
+        generator.setOutputDevice(buffer)
+        generator.setSize(QSize(BASE_W, BASE_H))
+        generator.setViewBox(QRect(0, 0, BASE_W, BASE_H))
+        generator.setTitle("Top View CAD")
+        generator.setDescription("OsdagBridge Top View")
+ 
+        # ── Temporarily resize widget to 900×750 so self.width()/self.height()
+        #    agree with the layout math inside draw_top_view ──────────────────
+        old_size  = self.size()
+        old_zoom  = self.zoom_level
+        self.zoom_level = 1.0
+        self.resize(BASE_W, BASE_H)
+        self._update_widget_size()
+ 
+        painter = QPainter()
+        try:
+            painter.begin(generator)
+            from PySide6.QtCore import Qt
+            painter.fillRect(QRect(0, 0, BASE_W, BASE_H), Qt.white)
+            painter.setRenderHint(QPainter.Antialiasing)
+            self.draw_top_view(painter)          # draw directly — no full paintEvent
+        finally:
+            painter.end()
+            buffer.close()
+            self.zoom_level = old_zoom
+            self.resize(old_size)
+ 
+        return bytes(svg_data).decode("utf-8")
+    
+    def export_hover_zones(self):
+        """
+        Export hover zones for frontend overlays.
+        """
+        zones = []
+
+        for i, (rect, element_type) in enumerate(self.top_view_hover_zones):
+            zones.append({
+                "id": f"{element_type}_{i}",
+                "type": element_type,
+                "x": rect.x(),
+                "y": rect.y(),
+                "width": rect.width(),
+                "height": rect.height(),
+            })
+
+        return {
+            "zones": zones
+        }

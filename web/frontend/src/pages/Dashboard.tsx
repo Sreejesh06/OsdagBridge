@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import LeftPanel from "../components/panels/LeftPanel";
-import RightPanel from "../components/panels/RightPanel";
+import LeftPanel from "../components/panels/InputDock";
+import RightPanel from "../components/panels/OutputDock";
 import CadArea from "../components/cad/CadArea";
 import LogWindow from "../components/log/LogWindow";
 import AdditionalInputsModal from "../components/modals/AdditionalInputsModal";

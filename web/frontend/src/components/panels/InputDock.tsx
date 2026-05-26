@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useBridgeStore } from "../../store/bridgeStore";
 import { analyzeBridge } from "../../services/api";
+import ProjectLocationDialog
+from "../ProjectLocationDialog/ProjectLocationDialog";
 
 type Props = {
   onOpenAdditionalInputs: () => void;
@@ -10,6 +12,8 @@ export default function LeftPanel({
   onOpenAdditionalInputs,
 }: Props) {
   const [tab, setTab] = useState<"basic" | "additional">("basic");
+  const [showLocationDialog, setShowLocationDialog] =
+  useState(false);
   const {
     bridgeInput,
     updateBridgeInput,
@@ -96,9 +100,14 @@ export default function LeftPanel({
         </Section>
 
         <Section>
-          <Row label="Project Location *">
-            <button className="greenBtn">Add Here</button>
-          </Row>
+        <Row label="Project Location *">
+  <button
+    className="greenBtn"
+    onClick={() => setShowLocationDialog(true)}
+  >
+    Select Location
+  </button>
+</Row>
         </Section>
 
         <Section title="Superstructure">
@@ -240,8 +249,62 @@ export default function LeftPanel({
   onClick={async () => {
     try {
   
+      // CROSS SECTION
+      // Generate default cross section ONLY ON FIRST DESIGN
+
+if (!bridgeInput.cross_section_initialized) {
+
+  const defaultCrossSectionPayload = {
+    ...bridgeInput,
+
+    girder_spacing:
+      bridgeInput.girder_spacing ?? 4,
+
+    no_of_girders:
+      bridgeInput.no_of_girders ?? 4,
+
+    deck_overhang_width:
+      bridgeInput.deck_overhang_width ?? 1,
+
+    overall_bridge_width:
+      bridgeInput.overall_bridge_width
+      ?? bridgeInput.width
+      ?? 12,
+
+    deck_thickness:
+      bridgeInput.deck_thickness ?? 250,
+
+    footpath_thickness:
+      bridgeInput.footpath_thickness ?? 150,
+
+    footpath_width:
+      bridgeInput.footpath_width ?? 1.5,
+
+    cross_section_initialized: true,
+  };
+
+  await fetch(
+    "http://127.0.0.1:8000/cross-section/generate",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        defaultCrossSectionPayload
+      ),
+    }
+  );
+
+  updateBridgeInput(
+    "cross_section_initialized",
+    true
+  );
+}
+  
+      // TOP VIEW
       await fetch(
-        "http://127.0.0.1:8000/cross-section/generate",
+        "http://127.0.0.1:8000/top-view/generate",
         {
           method: "POST",
           headers: {
@@ -251,19 +314,19 @@ export default function LeftPanel({
         }
       );
   
+      // ANALYSIS
       const result = await analyzeBridge(
         bridgeInput
       );
   
       setAnalysisResult(result);
   
+      // UPDATE CAD
       setSvgUrl(
         `http://127.0.0.1:8000/cross-section/svg?t=${Date.now()}`
       );
   
       setHasDesigned(true);
-  
-      console.log(result);
   
     } catch (err) {
       console.error(err);
@@ -294,6 +357,26 @@ export default function LeftPanel({
           }
         `}
       </style>
+
+      {showLocationDialog && (
+  <div
+    className="
+      fixed
+      inset-0
+      z-[999999]
+      flex
+      items-center
+      justify-center
+      bg-black/20
+    "
+  >
+    <ProjectLocationDialog
+      onClose={() =>
+        setShowLocationDialog(false)
+      }
+    />
+  </div>
+)}
     </div>
   );
 }

@@ -1,11 +1,13 @@
-body {
-  margin: 0;
-  font-family: "Segoe UI", sans-serif;
-  background: #f5f6f7;
-  overflow: hidden;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Scroll only inside panels */
-* {
-  box-sizing: border-box;
+@layer components {
+  .input {
+    @apply w-full p-[7px] rounded-[8px] border border-[#aaa] bg-[#eeeeee];
+  }
+
+  .greenBtn {
+    @apply bg-[#8DB600] border-none p-2 rounded-[8px] font-semibold cursor-pointer;
+  }
 }

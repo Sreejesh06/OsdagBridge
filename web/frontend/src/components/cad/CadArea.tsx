@@ -133,59 +133,17 @@ function Tooltip({ label, x, y }) {
 
 // ─── Top View Panel ─────────────────────────────────────────────────────────
 function TopViewPanel() {
-  const pz = usePanZoom(DEFAULT_TV_ZOOM);
-
-  const [tooltip, setTooltip] = useState({
-    label: "",
-    x: 0,
-    y: 0,
-  });
-
-  const onElementHover = useCallback((label, x, y) => {
-    setTooltip(label ? { label, x, y } : { label: "", x: 0, y: 0 });
-  }, []);
-
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "#fff",
-          overflow: "hidden",
-          cursor: "default",
-        }}
-        onMouseDown={pz.onMouseDown}
-        onMouseMove={pz.onMouseMove}
-        onMouseUp={pz.stopDrag}
-        onMouseLeave={pz.stopDrag}
-      >
-        <div
-  style={{
-    position: "absolute",
-    top: "10%",
-    left: "5%",
-    width: "90%",
-    height: "80%",
-    transformOrigin: "center center",
-    transform: `translate(${pz.pan.x}px, ${pz.pan.y}px) scale(${pz.zoom})`,
-    willChange: "transform",
-  }}
->
-          <TopViewCanvas
-            zoom={pz.zoom}
-            onElementHover={onElementHover}
-          />
-        </div>
-      </div>
-
-      <ZoomButtons
-        onZoomIn={pz.zoomIn}
-        onZoomOut={pz.zoomOut}
-        onReset={() => pz.resetView(DEFAULT_TV_ZOOM)}
-      />
-
-      <Tooltip {...tooltip} />
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        position: "relative",
+        background: "#fff",
+        overflow: "hidden",
+      }}
+    >
+      <TopViewCanvas />
     </div>
   );
 }

@@ -260,3 +260,4 @@ temp_plot.html
 *.htmlnode_modules/
 .vite/
 web/frontend/node_modules/
+node_modules/
