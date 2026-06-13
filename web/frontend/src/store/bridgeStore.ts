@@ -1,5 +1,8 @@
 import { create } from "zustand";
 
+export const GREEN = "#95b80f";
+export const API   = "http://127.0.0.1:8000";
+
 type BridgeInput = {
   span_length: number;
   width: number;
@@ -33,6 +36,7 @@ type BridgeStore = {
   hasDesigned:  boolean;
   svgUrl:       string;
   hoveredElement: string | null;
+  designMode:   "Optimized" | "Custom";
 
   updateBridgeInput:  (key: keyof BridgeInput, value: number) => void;
   setBridgeData:      (data: BridgeData) => void;
@@ -40,6 +44,7 @@ type BridgeStore = {
   setHasDesigned:     (value: boolean) => void;
   setSvgUrl:          (url: string) => void;
   setHoveredElement:  (element: string | null) => void;
+  setDesignMode:      (mode: "Optimized" | "Custom") => void;
 };
 
 export const useBridgeStore = create<BridgeStore>((set) => ({
@@ -64,6 +69,7 @@ export const useBridgeStore = create<BridgeStore>((set) => ({
   hasDesigned:     false,
   svgUrl:          "",
   hoveredElement:  null,
+  designMode:      "Custom",
 
   updateBridgeInput: (key, value) =>
     set((state) => ({
@@ -80,4 +86,6 @@ export const useBridgeStore = create<BridgeStore>((set) => ({
   setSvgUrl: (url) => set({ svgUrl: url }),
 
   setHoveredElement: (element) => set({ hoveredElement: element }),
+
+  setDesignMode: (mode) => set({ designMode: mode }),
 }));

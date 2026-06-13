@@ -183,3 +183,33 @@ def get_hover_zones():
 
     return JSONResponse(content=zones,
                         headers={"Cache-Control": "no-store"})
+
+
+@router.get("/rolled-sections")
+def get_rolled_sections():
+    """Return all available rolled sections from the SQLite catalog and their design properties."""
+    from osdagbridge.desktop.ui.dialogs.tabs.sub_tabs.section_properties.girder_details_tab import girder_properties
+    sections = girder_properties.list_available_sections()
+    result = {}
+    for designation, sec in sections.items():
+        result[designation] = {
+            "mass": sec.mass_per_meter_kg,
+            "area": sec.area_cm2,
+            "depth": sec.depth_mm,
+            "tfw": sec.flange_width_mm,
+            "tft": sec.flange_thickness_mm,
+            "bfw": sec.flange_width_mm,
+            "bft": sec.flange_thickness_mm,
+            "wt": sec.web_thickness_mm,
+            "iz": sec.moment_of_inertia_zz_cm4,
+            "iy": sec.moment_of_inertia_yy_cm4,
+            "rz": sec.radius_of_gyration_z_cm,
+            "ry": sec.radius_of_gyration_y_cm,
+            "zz": sec.elastic_section_modulus_z_cm3,
+            "zy": sec.elastic_section_modulus_y_cm3,
+            "zpz": sec.plastic_section_modulus_z_cm3,
+            "zpy": sec.plastic_section_modulus_y_cm3,
+            "it": sec.torsion_constant_cm4,
+            "iw": sec.warping_constant_cm6
+        }
+    return JSONResponse(content=result)

@@ -2,47 +2,114 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import CrossSectionCanvas from "../cad/CrossSectionCanvas";
-import { useBridgeStore } from "../../store/bridgeStore";
+import { useBridgeStore, GREEN, API } from "../../store/bridgeStore";
 
-const GREEN = "#95b80f";
-const API   = "http://127.0.0.1:8000";
+import LayoutTab from "./AdditionalInputs/sub_tabs/typical_section/LayoutTab";
+import CrashBarrierTab from "./AdditionalInputs/sub_tabs/typical_section/CrashBarrierTab";
+import MedianTab from "./AdditionalInputs/sub_tabs/typical_section/MedianTab";
+import RailingTab from "./AdditionalInputs/sub_tabs/typical_section/RailingTab";
+import WearingCourseTab from "./AdditionalInputs/sub_tabs/typical_section/WearingCourseTab";
+import LaneDetailsTab from "./AdditionalInputs/sub_tabs/typical_section/LaneDetailsTab";
+
+import GirderDetailsTab from "./AdditionalInputs/sub_tabs/section_properties/GirderDetailsTab";
+import StiffenerDetailsTab from "./AdditionalInputs/sub_tabs/section_properties/StiffenerDetailsTab";
+import CrossBracingDetailsTab from "./AdditionalInputs/sub_tabs/section_properties/CrossBracingDetailsTab";
+import EndDiaphragmDetailsTab from "./AdditionalInputs/sub_tabs/section_properties/EndDiaphragmDetailsTab";
 
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-function Label({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 14 }}>{children}</div>;
+function createDefaultMemberProperties(noOfGirders: number, spanLength: number) {
+  const girderDetails: Record<string, any> = {};
+  const stiffenerDetails: Record<string, any> = {};
+  const crossBracing: Record<string, any> = {};
+
+  for (let i = 1; i <= noOfGirders; i++) {
+    const gId = `G${i}`;
+    girderDetails[gId] = {
+      type: "Welded",
+      segments: [
+        {
+          id: `${gId}M1`,
+          start: 0,
+          end: spanLength,
+          length: spanLength,
+          type: "Welded",
+          is_section: "ISMB 500",
+          depth: 1500,
+          top_flange_width: 400,
+          top_flange_thickness_value: 20,
+          bottom_flange_width: 400,
+          bottom_flange_thickness_value: 20,
+          web_thickness_value: 12
+        }
+      ]
+    };
+    stiffenerDetails[`${gId}M1`] = {
+      bearing_stiffeners_each_end: "2",
+      bearing_spacing_mm: "100",
+      bearing_thickness: "All",
+      bearing_thickness_value: "16",
+      bearing_outstand_mm: "150",
+      intermediate_stiffener: "No",
+      intermediate_spacing_mm: "1000",
+      intermediate_thickness: "All",
+      intermediate_thickness_value: "12",
+      intermediate_outstand_mm: "100",
+      longitudinal_stiffener: "No",
+      longitudinal_thickness: "All",
+      longitudinal_thickness_value: "12",
+      shear_buckling_method: "Simple Post Critical"
+    };
+  }
+
+  for (let i = 1; i < noOfGirders; i++) {
+    const pairId = `G${i}-G${i+1}`;
+    crossBracing[pairId] = {
+      design: "Optimized",
+      bracing_type: "K-Bracing",
+      bracing_section_type: "Angle",
+      bracing_section: "ISA 5050x6",
+      top_chord_enabled: false,
+      top_chord_type: "Angle",
+      top_chord_size: "ISA 5050x6",
+      bottom_chord_enabled: true,
+      bottom_chord_type: "Angle",
+      bottom_chord_size: "ISA 5050x6",
+      spacing: "3.0"
+    };
+  }
+
+  return {
+    girder_details: girderDetails,
+    stiffener_details: stiffenerDetails,
+    cross_bracing: crossBracing,
+    end_diaphragm: {
+      type: "Cross Bracing",
+      cross_design: "Optimized",
+      cross_bracing_type: "K-Bracing",
+      cross_bracing_section_type: "Angle",
+      cross_bracing_section: "ISA 5050x6",
+      cross_top_chord_checkbox: false,
+      cross_top_chord_type: "Angle",
+      cross_top_chord_size: "ISA 5050x6",
+      cross_bottom_chord_checkbox: true,
+      cross_bottom_chord_type: "Angle",
+      cross_bottom_chord_size: "ISA 5050x6",
+      rolled_design: "Optimized",
+      rolled_is_section: "ISMB 500",
+      welded_design: "Optimized",
+      welded_symmetry: "Girder Symmetric"
+    }
+  };
 }
 
-function Input({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-  return (
-    <input
-      value={value}
-      onChange={onChange}
-      style={{
-        width: "70%", height: 24,
-        borderRadius: 14, border: "2px solid #444",
-        background: "#f7f7f7", padding: "0 12px", fontSize: 12,
-      }}
-    />
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 export default function AdditionalInputsModal({ open, onClose }: Props) {
-  const { svgUrl, hasDesigned, bridgeData, setBridgeData, setSvgUrl } =
+  const { svgUrl, hasDesigned, bridgeData, setBridgeData, setSvgUrl, bridgeInput } =
     useBridgeStore();
 
-  // Local form state — initialised from store whenever modal opens
   const [form, setForm] = useState({
     girderSpacing:      "",
     noOfGirders:        "",
@@ -51,17 +118,46 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
     deckThickness:      "",
     footpathThickness:  "",
     footpathWidth:      "",
+    crashBarrierWidth:  "",
+    crashBarrierType:   "",
+    railingType:        "",
+    railingWidth:       "",
+    railingHeight:      "",
+    medianPresent:      false,
+    medianWidth:        "",
+    medianType:         "",
+    wearingCourseThickness: "",
   });
 
-  // URL shown in the modal's preview CAD — refreshed live as form changes
+  const [memberProps, setMemberProps] = useState<any>({});
+  const [selectedBracingPair, setSelectedBracingPair] = useState<string>("G1-G2");
+
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [previewLoading, setPreviewLoading] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const topTabs    = ["Typical Section Details","Member Properties","Loading","Support Conditions","Analysis/Design Options","Design Options (Cont.)"];
-  const bottomTabs = ["Layout","Crash Barrier","Median","Railing","Wearing Course","Lane Details"];
+  const [activeTopTabIndex, setActiveTopTabIndex] = useState(0);
+  const [activeBottomTabIndex, setActiveBottomTabIndex] = useState(0);
 
-  // ── Sync form from store when modal opens ────────────────────────────────
+  const topTabs = [
+    "Typical Section Details",
+    "Member Properties",
+    "Loading",
+    "Support Conditions",
+    "Analysis/Design Options",
+    "Design Options (Cont.)"
+  ];
+
+  const getBottomTabs = () => {
+    if (activeTopTabIndex === 0) {
+      return ["Layout", "Crash Barrier", "Median", "Railing", "Wearing Course", "Lane Details"];
+    }
+    if (activeTopTabIndex === 1) {
+      return ["Girder Details", "Stiffener Details", "Cross-Bracing Details", "End Diaphragm Details"];
+    }
+    return [];
+  };
+
   useEffect(() => {
     if (!open || !bridgeData) return;
     setForm({
@@ -72,13 +168,24 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       deckThickness:      String(bridgeData.deck_thickness      ?? "250"),
       footpathThickness:  String(bridgeData.footpath_thickness  ?? "150"),
       footpathWidth:      String(bridgeData.footpath_width      ?? "1.5"),
+      crashBarrierWidth:  String(bridgeData.crash_barrier_width ?? "500"),
+      crashBarrierType:   String(bridgeData.crash_barrier_type  ?? "PL-1"),
+      railingType:        String(bridgeData.railing_type        ?? "IRC 5 - RCC Railing"),
+      railingWidth:       String(bridgeData.railing_width       ?? "375"),
+      railingHeight:      String(bridgeData.railing_height      ?? "1000"),
+      medianPresent:      Boolean(bridgeData.median_present     ?? false),
+      medianWidth:        String(bridgeData.median_width        ?? "1200"),
+      medianType:         String(bridgeData.median_type         ?? "Raised"),
+      wearingCourseThickness: String(bridgeData.wearing_course_thickness ?? "50"),
     });
-    // Show the current SVG immediately when modal opens
-    setPreviewUrl(svgUrl ? `${svgUrl}&t=${Date.now()}` : "");
-  }, [open]);  // only run when open changes — NOT on every bridgeData update
 
-  // ── Send form to backend and get back a fresh SVG URL ────────────────────
-  const generatePreview = useCallback(async (currentForm: typeof form) => {
+    const initialMemberProps = (bridgeData.member_properties as any) || createDefaultMemberProperties(Number(bridgeData.no_of_girders ?? 4), Number(bridgeData.span_length ?? 35));
+    setMemberProps(initialMemberProps);
+
+    setPreviewUrl(svgUrl ? `${svgUrl}&t=${Date.now()}` : "");
+  }, [open]);
+
+  const generatePreview = useCallback(async (currentForm: typeof form, currentMemberProps: any) => {
     setPreviewLoading(true);
     try {
       const payload = {
@@ -90,6 +197,18 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
         deck_thickness:       Number(currentForm.deckThickness),
         footpath_thickness:   Number(currentForm.footpathThickness),
         footpath_width:       Number(currentForm.footpathWidth),
+
+        crash_barrier_width:  Number(currentForm.crashBarrierWidth),
+        crash_barrier_type:   currentForm.crashBarrierType,
+        railing_type:         currentForm.railingType,
+        railing_width:        Number(currentForm.railingWidth),
+        railing_height:       Number(currentForm.railingHeight),
+        median_present:       currentForm.medianPresent,
+        median_width:         Number(currentForm.medianWidth),
+        median_type:          currentForm.medianType,
+        wearing_course_thickness: Number(currentForm.wearingCourseThickness),
+
+        member_properties:    currentMemberProps,
       };
 
       const res = await fetch(`${API}/cross-section/generate`, {
@@ -99,7 +218,6 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       });
 
       if (res.ok) {
-        // Backend regenerated the SVG — bust the cache with timestamp
         setPreviewUrl(`${API}/cross-section/svg?t=${Date.now()}`);
       }
     } catch (err) {
@@ -109,19 +227,98 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
     }
   }, [bridgeData]);
 
-  // ── Live preview: debounce 600 ms after any field change ─────────────────
-  const updateField = (field: string, value: string) => {
-    const next = { ...form, [field]: value };
-    setForm(next);
-
-    // Debounce so we don't spam the backend on every keypress
+  // Debounced effect for live preview updates when form or memberProps changes
+  useEffect(() => {
+    if (!open) return;
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
-      generatePreview(next);
+      generatePreview(form, memberProps);
     }, 600);
+  }, [form, memberProps, open, generatePreview]);
+
+  const updateField = (field: string, value: any) => {
+    setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  // ── Defaults ─────────────────────────────────────────────────────────────
+  const updateGirderField = (gId: string, segIdx: number, field: string, value: any) => {
+    setMemberProps((prev: any) => {
+      const next = { ...prev };
+      if (!next.girder_details) next.girder_details = {};
+      if (!next.girder_details[gId]) next.girder_details[gId] = {};
+      const segments = [...(next.girder_details[gId].segments || [])];
+      if (segments[segIdx]) {
+        segments[segIdx] = {
+          ...segments[segIdx],
+          [field]: value
+        };
+      }
+      next.girder_details[gId] = {
+        ...next.girder_details[gId],
+        segments
+      };
+      return next;
+    });
+  };
+
+  const updateStiffenerField = (memberId: string, field: string, value: any) => {
+    setMemberProps((prev: any) => {
+      const next = { ...prev };
+      if (!next.stiffener_details) next.stiffener_details = {};
+      if (!next.stiffener_details[memberId]) next.stiffener_details[memberId] = {};
+      next.stiffener_details[memberId] = {
+        ...next.stiffener_details[memberId],
+        [field]: value
+      };
+      return next;
+    });
+  };
+
+  const updateBracingField = (pairId: string, field: string, value: any) => {
+    setMemberProps((prev: any) => {
+      const next = { ...prev };
+      if (!next.cross_bracing) next.cross_bracing = {};
+      if (!next.cross_bracing[pairId]) next.cross_bracing[pairId] = {};
+      next.cross_bracing[pairId] = {
+        ...next.cross_bracing[pairId],
+        [field]: value
+      };
+      return next;
+    });
+  };
+
+  const updateEndDiaphragmField = (field: string, value: any) => {
+    setMemberProps((prev: any) => {
+      const next = { ...prev };
+      if (!next.end_diaphragm) next.end_diaphragm = {};
+      next.end_diaphragm = {
+        ...next.end_diaphragm,
+        [field]: value
+      };
+      return next;
+    });
+  };
+
+  const getStiffenerMemberIds = () => {
+    const ids: string[] = [];
+    if (memberProps?.girder_details) {
+      Object.keys(memberProps.girder_details).sort().forEach(gId => {
+        const segs = memberProps.girder_details[gId]?.segments || [];
+        segs.forEach((seg: any) => {
+          ids.push(seg.id);
+        });
+      });
+    }
+    return ids;
+  };
+
+  // Sync selectedBracingPair if it becomes invalid due to girder count changes
+  useEffect(() => {
+    const keys = Object.keys(memberProps?.cross_bracing || {});
+    if (keys.length > 0 && !keys.includes(selectedBracingPair)) {
+      setSelectedBracingPair(keys[0]);
+    }
+  }, [memberProps, selectedBracingPair]);
+
   const handleDefaults = () => {
     const defaults = {
       girderSpacing:      "4",
@@ -131,12 +328,25 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       deckThickness:      "250",
       footpathThickness:  "150",
       footpathWidth:      "1.5",
+      crashBarrierWidth:  "500",
+      crashBarrierType:   "PL-1",
+      railingType:        "IRC 5 - RCC Railing",
+      railingWidth:       "375",
+      railingHeight:      "1000",
+      medianPresent:      false,
+      medianWidth:        "1200",
+      medianType:         "Raised",
+      wearingCourseThickness: "50",
     };
     setForm(defaults);
-    generatePreview(defaults);
+
+    const defaultMemberProps = createDefaultMemberProperties(
+      Number(defaults.noOfGirders),
+      Number(bridgeInput?.span_length ?? 35)
+    );
+    setMemberProps(defaultMemberProps);
   };
 
-  // ── Save: persist to store + update main dashboard CAD + close ───────────
   const handleSave = async () => {
     const updatedData = {
       ...bridgeData,
@@ -147,6 +357,18 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       deck_thickness:       Number(form.deckThickness),
       footpath_thickness:   Number(form.footpathThickness),
       footpath_width:       Number(form.footpathWidth),
+
+      crash_barrier_width:  Number(form.crashBarrierWidth),
+      crash_barrier_type:   form.crashBarrierType,
+      railing_type:         form.railingType,
+      railing_width:        Number(form.railingWidth),
+      railing_height:       Number(form.railingHeight),
+      median_present:       form.medianPresent,
+      median_width:         Number(form.medianWidth),
+      median_type:          form.medianType,
+      wearing_course_thickness: Number(form.wearingCourseThickness),
+
+      member_properties:    memberProps,
     };
 
     try {
@@ -158,18 +380,13 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
 
       if (res.ok) {
         const newSvgUrl = `${API}/cross-section/svg?t=${Date.now()}`;
-
-        // 1. Persist updated data so re-opening the modal stays in sync
         setBridgeData(updatedData);
-
-        // 2. Update the main dashboard SVG URL so CadArea reflects the change
         setSvgUrl(newSvgUrl);
       }
     } catch (err) {
       console.error("Save failed:", err);
     }
 
-    // Close regardless — if the request failed the old CAD is still shown
     onClose();
   };
 
@@ -177,6 +394,75 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
   useEffect(() => () => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
   }, []);
+
+  const renderTabContent = () => {
+    if (activeTopTabIndex === 0) {
+      switch (activeBottomTabIndex) {
+        case 0:
+          return <LayoutTab form={form} updateField={updateField} />;
+        case 1:
+          return <CrashBarrierTab form={form} updateField={updateField} />;
+        case 2:
+          return <MedianTab form={form} updateField={updateField} />;
+        case 3:
+          return <RailingTab form={form} updateField={updateField} />;
+        case 4:
+          return <WearingCourseTab form={form} updateField={updateField} />;
+        case 5:
+          return <LaneDetailsTab form={form} />;
+        default:
+          return null;
+      }
+    }
+
+    if (activeTopTabIndex === 1) {
+      switch (activeBottomTabIndex) {
+        case 0:
+          return (
+            <GirderDetailsTab
+              memberProps={memberProps}
+              setMemberProps={setMemberProps}
+              updateGirderField={updateGirderField}
+              form={form}
+              bridgeInput={bridgeInput}
+            />
+          );
+        case 1:
+          return (
+            <StiffenerDetailsTab
+              memberProps={memberProps}
+              updateStiffenerField={updateStiffenerField}
+              getStiffenerMemberIds={getStiffenerMemberIds}
+            />
+          );
+        case 2:
+          return (
+            <CrossBracingDetailsTab
+              memberProps={memberProps}
+              selectedBracingPair={selectedBracingPair}
+              setSelectedBracingPair={setSelectedBracingPair}
+              updateBracingField={updateBracingField}
+            />
+          );
+        case 3:
+          return (
+            <EndDiaphragmDetailsTab
+              memberProps={memberProps}
+              updateEndDiaphragmField={updateEndDiaphragmField}
+            />
+          );
+        default:
+          return null;
+      }
+    }
+
+    return (
+      <div style={{ padding: 20, textAlign: "center", color: "#555" }}>
+        <p style={{ fontWeight: 600, fontSize: 15 }}>{topTabs[activeTopTabIndex]} Configuration</p>
+        <p style={{ fontSize: 13, marginTop: 8 }}>This section is configured automatically based on structure type.</p>
+      </div>
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -224,109 +510,87 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
             {/* TOP TABS */}
             <div style={{ display: "flex", borderBottom: "1px solid #7a7a7a", background: "#efefef" }}>
               {topTabs.map((tab, i) => (
-                <div key={tab} style={{
-                  padding: "8px 14px", borderRight: "1px solid #7a7a7a",
-                  background: i === 0 ? GREEN : "#ececec",
-                  color: i === 0 ? "white" : "#555",
-                  fontSize: 12, lineHeight: "22px",
-                }}>
+                <div
+                  key={tab}
+                  onClick={() => {
+                    setActiveTopTabIndex(i);
+                    setActiveBottomTabIndex(0);
+                  }}
+                  style={{
+                    padding: "8px 14px", borderRight: "1px solid #7a7a7a",
+                    background: i === activeTopTabIndex ? GREEN : "#ececec",
+                    color: i === activeTopTabIndex ? "white" : "#555",
+                    fontSize: 12, lineHeight: "22px",
+                    cursor: "pointer",
+                  }}
+                >
                   {tab}
                 </div>
               ))}
             </div>
 
             {/* CAD PREVIEW */}
-            <div style={{
-              margin: 10, border: "1px solid #555", borderRadius: 10,
-              background: "#ffffff", height: 270,
-              position: "relative", overflow: "hidden",
-            }}>
-              {/* Loading overlay */}
-              {previewLoading && (
-                <div style={{
-                  position: "absolute", inset: 0, zIndex: 10,
-                  background: "rgba(255,255,255,0.6)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 13, color: "#666", fontFamily: "sans-serif",
-                }}>
-                  Updating preview…
-                </div>
-              )}
+            {activeTopTabIndex === 0 && (
+              <div style={{
+                margin: 10, border: "1px solid #555", borderRadius: 10,
+                background: "#ffffff", height: 270,
+                position: "relative", overflow: "hidden",
+              }}>
+                {/* Loading overlay */}
+                {previewLoading && (
+                  <div style={{
+                    position: "absolute", inset: 0, zIndex: 10,
+                    background: "rgba(255,255,255,0.6)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, color: "#666", fontFamily: "sans-serif",
+                  }}>
+                    Updating preview…
+                  </div>
+                )}
 
-              {hasDesigned && previewUrl ? (
-                <CrossSectionCanvas svgUrl={previewUrl} />
-              ) : (
-                <div style={{
-                  position: "absolute", inset: 0,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#777", fontSize: 18, fontWeight: 600, letterSpacing: 1,
-                }}>
-                  Cross Section Preview
-                </div>
-              )}
-            </div>
+                {hasDesigned && previewUrl ? (
+                  <CrossSectionCanvas svgUrl={previewUrl} />
+                ) : (
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#777", fontSize: 18, fontWeight: 600, letterSpacing: 1,
+                  }}>
+                    Cross Section Preview
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* LOWER TABS */}
-            <div style={{ display: "flex", margin: "0 14px", border: "1px solid #555" }}>
-              {bottomTabs.map((tab, i) => (
-                <div key={tab} style={{
-                  flex: 1, padding: 8, textAlign: "center",
-                  borderRight: i !== bottomTabs.length - 1 ? "1px solid #555" : "none",
-                  background: i === 0 ? GREEN : "#ececec",
-                  color: i === 0 ? "white" : "#555", fontSize: 12,
-                }}>
-                  {tab}
-                </div>
-              ))}
-            </div>
+            {getBottomTabs().length > 0 && (
+              <div style={{ display: "flex", margin: "0 14px", border: "1px solid #555" }}>
+                {getBottomTabs().map((tab, i) => (
+                  <div
+                    key={tab}
+                    onClick={() => setActiveBottomTabIndex(i)}
+                    style={{
+                      flex: 1, padding: 8, textAlign: "center",
+                      borderRight: i !== getBottomTabs().length - 1 ? "1px solid #555" : "none",
+                      background: i === activeBottomTabIndex ? GREEN : "#ececec",
+                      color: i === activeBottomTabIndex ? "white" : "#555",
+                      fontSize: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {tab}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* FORM */}
             <div style={{
               flex: 1, margin: 14, border: "1px solid #555",
               borderRadius: 12, background: "#f7f7f7", padding: "18px 24px",
+              overflowY: "auto",
             }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Inputs:</div>
-
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 240px 1fr 240px",
-                rowGap: 14, columnGap: 30, alignItems: "center",
-              }}>
-                <Label>Girder Spacing (m):</Label>
-                <Input value={form.girderSpacing}
-                  onChange={e => updateField("girderSpacing", e.target.value)} />
-
-                <Label>No. of Girders:</Label>
-                <Input value={form.noOfGirders}
-                  onChange={e => updateField("noOfGirders", e.target.value)} />
-
-                <Label>Deck Overhang Width (m):</Label>
-                <Input value={form.deckOverhangWidth}
-                  onChange={e => updateField("deckOverhangWidth", e.target.value)} />
-
-                <div style={{ fontSize: 12, fontStyle: "italic" }}>Values adjusted for:</div>
-                <div />
-
-                <Label>Overall Bridge Width (m):</Label>
-                <Input value={form.overallBridgeWidth}
-                  onChange={e => updateField("overallBridgeWidth", e.target.value)} />
-
-                <div /><div />
-
-                <Label>Deck Thickness (mm):</Label>
-                <Input value={form.deckThickness}
-                  onChange={e => updateField("deckThickness", e.target.value)} />
-
-                <div /><div />
-
-                <Label>Footpath Thickness (mm):</Label>
-                <Input value={form.footpathThickness}
-                  onChange={e => updateField("footpathThickness", e.target.value)} />
-
-                <Label>Footpath Width (m):</Label>
-                <Input value={form.footpathWidth}
-                  onChange={e => updateField("footpathWidth", e.target.value)} />
-              </div>
+              {renderTabContent()}
             </div>
 
             {/* FOOTER */}

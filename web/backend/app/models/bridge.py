@@ -25,6 +25,7 @@ class BridgeInput(BaseModel):
     footpath_thickness:   Optional[float] = 200    # mm
     footpath_width:       Optional[float] = 1500   # mm
     footpath_config:      Optional[str]   = "none"
+    member_properties:    Optional[dict]  = None
 
     # ── Crash barrier / railing / median ───────────────────────────────────
     crash_barrier_width:  Optional[float] = 500    # mm

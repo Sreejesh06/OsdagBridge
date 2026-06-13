@@ -20,6 +20,8 @@ export default function LeftPanel({
     setAnalysisResult,
     setHasDesigned,
     setSvgUrl,
+    designMode,
+    setDesignMode,
   } = useBridgeStore();
   
 
@@ -91,6 +93,19 @@ export default function LeftPanel({
           minHeight: 0,
         }}
       >
+        <Section title="Design Configuration">
+          <Row label="Design Mode">
+            <select
+              className="input"
+              value={designMode}
+              onChange={(e) => setDesignMode(e.target.value as "Optimized" | "Custom")}
+            >
+              <option value="Optimized">Optimized</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </Row>
+        </Section>
+
         <Section title="Type of Structure">
           <Row label="Type of Structure">
             <select className="input">
