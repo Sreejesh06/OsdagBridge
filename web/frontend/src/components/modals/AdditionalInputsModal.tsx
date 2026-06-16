@@ -37,13 +37,19 @@ function createDefaultMemberProperties(noOfGirders: number, spanLength: number) 
           end: spanLength,
           length: spanLength,
           type: "Welded",
-          is_section: "ISMB 500",
-          depth: 1500,
+          is_section: "MB 500",
+                    depth: 1500,
+          total_depth_mm: 1500,
           top_flange_width: 400,
+          top_flange_width_mm: 400,
           top_flange_thickness_value: 20,
+          top_thickness_value_mm: 20,
           bottom_flange_width: 400,
+          bottom_flange_width_mm: 400,
           bottom_flange_thickness_value: 20,
-          web_thickness_value: 12
+          bottom_thickness_value_mm: 20,
+          web_thickness_value: 12,
+          web_thickness_value_mm: 12
         }
       ]
     };
@@ -99,7 +105,7 @@ function createDefaultMemberProperties(noOfGirders: number, spanLength: number) 
       cross_bottom_chord_type: "Angle",
       cross_bottom_chord_size: "ISA 5050x6",
       rolled_design: "Optimized",
-      rolled_is_section: "ISMB 500",
+      rolled_is_section: "MB 500",
       welded_design: "Optimized",
       welded_symmetry: "Girder Symmetric"
     }
@@ -138,6 +144,27 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
 
   const [activeTopTabIndex, setActiveTopTabIndex] = useState(0);
   const [activeBottomTabIndex, setActiveBottomTabIndex] = useState(0);
+
+  const [rolledProperties, setRolledProperties] = useState<Record<string, any>>({});
+  const [rolledIsSections, setRolledIsSections] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchRolledSections = async () => {
+      try {
+        const res = await fetch(`${API}/cross-section/rolled-sections`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Object.keys(data).length > 0) {
+            setRolledProperties(data);
+            setRolledIsSections(Object.keys(data).sort());
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch rolled sections:", err);
+      }
+    };
+    fetchRolledSections();
+  }, []);
 
   const topTabs = [
     "Typical Section Details",
@@ -252,10 +279,27 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
           [field]: value
         };
       }
-      next.girder_details[gId] = {
+      
+      const girderLevelFields = [
+        "type",
+        "torsional_restraint",
+        "warping_restraint",
+        "web_type",
+        "support_type",
+        "support_width",
+        "support_width_mm"
+      ];
+      
+      const updatedGirder = {
         ...next.girder_details[gId],
         segments
       };
+      
+      if (girderLevelFields.includes(field)) {
+        updatedGirder[field] = value;
+      }
+      
+      next.girder_details[gId] = updatedGirder;
       return next;
     });
   };
@@ -425,6 +469,8 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
               updateGirderField={updateGirderField}
               form={form}
               bridgeInput={bridgeInput}
+              rolledProperties={rolledProperties}
+              rolledIsSections={rolledIsSections}
             />
           );
         case 1:
@@ -449,6 +495,7 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
             <EndDiaphragmDetailsTab
               memberProps={memberProps}
               updateEndDiaphragmField={updateEndDiaphragmField}
+              rolledIsSections={rolledIsSections}
             />
           );
         default:
