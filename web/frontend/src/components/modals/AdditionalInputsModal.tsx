@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import CrossSectionCanvas from "../cad/CrossSectionCanvas";
 import { useBridgeStore, GREEN, API } from "../../store/bridgeStore";
+import { ROLLED_PROPERTIES } from "../constants/memberConstants";
 
 import LayoutTab from "./AdditionalInputs/sub_tabs/typical_section/LayoutTab";
 import CrashBarrierTab from "./AdditionalInputs/sub_tabs/typical_section/CrashBarrierTab";
@@ -19,6 +20,135 @@ import EndDiaphragmDetailsTab from "./AdditionalInputs/sub_tabs/section_properti
 type Props = {
   open: boolean;
   onClose: () => void;
+};
+
+function normalizeMemberProperties(rawProps: any, noOfGirders: number, spanLength: number) {
+  if (!rawProps || Object.keys(rawProps).length === 0) {
+    return createDefaultMemberProperties(noOfGirders, spanLength);
+  }
+
+  // 1. Girder Details
+  let girderDetails = rawProps.girder_details;
+  if (girderDetails && girderDetails.member_state) {
+    girderDetails = girderDetails.member_state;
+  }
+
+  // 2. Stiffener Details
+  let stiffenerDetails = rawProps.stiffener_details;
+  if (stiffenerDetails && stiffenerDetails.stiffener_by_member) {
+    stiffenerDetails = stiffenerDetails.stiffener_by_member;
+  }
+  const normalizedStiffener: Record<string, any> = {};
+  if (stiffenerDetails) {
+    for (const mId in stiffenerDetails) {
+      const item = stiffenerDetails[mId];
+      normalizedStiffener[mId] = {
+        ...item,
+        bearing_thickness: item.bearing_thickness_mode !== undefined ? item.bearing_thickness_mode : (item.bearing_thickness || "All"),
+        intermediate_thickness: item.intermediate_thickness_mode !== undefined ? item.intermediate_thickness_mode : (item.intermediate_thickness || "All"),
+        longitudinal_thickness: item.longitudinal_thickness_mode !== undefined ? item.longitudinal_thickness_mode : (item.longitudinal_thickness || "All"),
+      };
+    }
+  }
+
+  // 3. Cross Bracing
+  let crossBracing = rawProps.cross_bracing;
+  if (crossBracing && crossBracing.cross_bracing_by_pair) {
+    crossBracing = crossBracing.cross_bracing_by_pair;
+  }
+
+  // 4. End Diaphragm
+  const endDiaphragm = rawProps.end_diaphragm || {};
+
+  return {
+    girder_details: girderDetails || {},
+    stiffener_details: normalizedStiffener,
+    cross_bracing: crossBracing || {},
+    end_diaphragm: endDiaphragm,
+  };
+}
+
+function serializeMemberProperties(memberProps: any) {
+  if (!memberProps) return {};
+
+  // 1. Girder Details
+  const finalGirderDetails = {
+    member_state: memberProps.girder_details || {}
+  };
+
+  // 2. Stiffener Details
+  const serializedStiffenerDetails: Record<string, any> = {};
+  const rawStiff = memberProps.stiffener_details || {};
+  for (const mId in rawStiff) {
+    const item = rawStiff[mId];
+    serializedStiffenerDetails[mId] = {
+      ...item,
+      bearing_thickness_mode: item.bearing_thickness !== undefined ? item.bearing_thickness : "All",
+      intermediate_thickness_mode: item.intermediate_thickness !== undefined ? item.intermediate_thickness : "All",
+      longitudinal_thickness_mode: item.longitudinal_thickness !== undefined ? item.longitudinal_thickness : "All",
+    };
+    delete serializedStiffenerDetails[mId].bearing_thickness;
+    delete serializedStiffenerDetails[mId].intermediate_thickness;
+    delete serializedStiffenerDetails[mId].longitudinal_thickness;
+  }
+  const finalStiffenerDetails = {
+    stiffener_by_member: serializedStiffenerDetails
+  };
+
+  // 3. Cross Bracing
+  const finalCrossBracing = {
+    cross_bracing_by_pair: memberProps.cross_bracing || {}
+  };
+
+  // 4. End Diaphragm
+  const finalEndDiaphragm = memberProps.end_diaphragm || {};
+
+  return {
+    girder_details: finalGirderDetails,
+    stiffener_details: finalStiffenerDetails,
+    cross_bracing: finalCrossBracing,
+    end_diaphragm: finalEndDiaphragm,
+  };
+}
+
+const getMemberSectionDimensions = (mId: string, memberProps: any) => {
+  if (!mId || !memberProps?.girder_details) return null;
+  const gId = mId.split("M")[0];
+  const segs = memberProps.girder_details[gId]?.segments || [];
+  const seg = segs.find((s: any) => s.id === mId);
+  if (!seg) return null;
+
+  const isWelded = (memberProps.girder_details[gId]?.type || "Welded") === "Welded";
+
+  if (isWelded) {
+    const depth = Number(seg.depth ?? seg.total_depth_mm ?? 1500);
+    const top_width = Number(seg.top_flange_width ?? seg.top_flange_width_mm ?? 400);
+    const bottom_width = Number(seg.bottom_flange_width ?? seg.bottom_flange_width_mm ?? top_width);
+    const web_thickness = Number(seg.web_thickness_value ?? seg.web_thickness_value_mm ?? 12);
+    const top_thickness = Number(seg.top_flange_thickness_value ?? seg.top_thickness_value_mm ?? 20);
+    const bottom_thickness = Number(seg.bottom_flange_thickness_value ?? seg.bottom_thickness_value_mm ?? top_thickness);
+
+    return {
+      top_flange_width_mm: top_width,
+      bottom_flange_width_mm: bottom_width,
+      web_thickness_mm: web_thickness,
+      depth_mm: depth,
+      top_flange_thickness_mm: top_thickness,
+      bottom_flange_thickness_mm: bottom_thickness,
+    };
+  } else {
+    const sectionName = seg.is_section || "MB 500";
+    const props = ROLLED_PROPERTIES[sectionName];
+    if (!props) return null;
+    return {
+      top_flange_width_mm: Number(props.tfw),
+      bottom_flange_width_mm: Number(props.bfw),
+      web_thickness_mm: Number(props.wt),
+      depth_mm: Number(props.depth),
+      top_flange_thickness_mm: Number(props.tft),
+      bottom_flange_thickness_mm: Number(props.bft),
+    };
+  }
 };
 
 function createDefaultMemberProperties(noOfGirders: number, spanLength: number) {
@@ -55,18 +185,18 @@ function createDefaultMemberProperties(noOfGirders: number, spanLength: number) 
     };
     stiffenerDetails[`${gId}M1`] = {
       bearing_stiffeners_each_end: "2",
-      bearing_spacing_mm: "100",
+      bearing_spacing_mm: "",
       bearing_thickness: "All",
-      bearing_thickness_value: "16",
-      bearing_outstand_mm: "150",
+      bearing_thickness_value: "8",
+      bearing_outstand_mm: "",
       intermediate_stiffener: "No",
-      intermediate_spacing_mm: "1000",
+      intermediate_spacing_mm: "NA",
       intermediate_thickness: "All",
-      intermediate_thickness_value: "12",
-      intermediate_outstand_mm: "100",
+      intermediate_thickness_value: "8",
+      intermediate_outstand_mm: "",
       longitudinal_stiffener: "No",
       longitudinal_thickness: "All",
-      longitudinal_thickness_value: "12",
+      longitudinal_thickness_value: "8",
       shear_buckling_method: "Simple Post Critical"
     };
   }
@@ -206,7 +336,11 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       wearingCourseThickness: String(bridgeData.wearing_course_thickness ?? "50"),
     });
 
-    const initialMemberProps = (bridgeData.member_properties as any) || createDefaultMemberProperties(Number(bridgeData.no_of_girders ?? 4), Number(bridgeData.span_length ?? 35));
+    const initialMemberProps = normalizeMemberProperties(
+      bridgeData.member_properties,
+      Number(bridgeData.no_of_girders ?? 4),
+      Number(bridgeData.span_length ?? 35)
+    );
     setMemberProps(initialMemberProps);
 
     setPreviewUrl(svgUrl ? `${svgUrl}&t=${Date.now()}` : "");
@@ -235,7 +369,7 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
         median_type:          currentForm.medianType,
         wearing_course_thickness: Number(currentForm.wearingCourseThickness),
 
-        member_properties:    currentMemberProps,
+        member_properties:    serializeMemberProperties(currentMemberProps),
       };
 
       const res = await fetch(`${API}/cross-section/generate`, {
@@ -392,6 +526,65 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
   };
 
   const handleSave = async () => {
+    const isOptimized = designMode === "Optimized";
+    const errors: string[] = [];
+
+    if (!isOptimized) {
+      const stiffenerDetails = memberProps.stiffener_details || {};
+      const memberIds = getStiffenerMemberIds();
+
+      for (const mId of memberIds) {
+        const stiff = stiffenerDetails[mId] || {};
+        
+        // 1. Spacing Validation
+        if (stiff.intermediate_stiffener === "Yes") {
+          const spacing = String(stiff.intermediate_spacing_mm || "").trim();
+          const spacingNum = Number(spacing);
+          if (!spacing || isNaN(spacingNum) || spacingNum <= 0) {
+            errors.push(
+              `Intermediate Stiffener Spacing (mm) is required and must be a positive integer for member '${mId}' when Intermediate Stiffener is Yes.`
+            );
+          }
+        }
+
+        // 2. Outstand Validation
+        const dims = getMemberSectionDimensions(mId, memberProps);
+        if (dims) {
+          const { top_flange_width_mm, bottom_flange_width_mm, web_thickness_mm } = dims;
+          if (top_flange_width_mm > 0 && bottom_flange_width_mm > 0 && web_thickness_mm > 0) {
+            const maxOutstand = (Math.min(top_flange_width_mm, bottom_flange_width_mm) - web_thickness_mm) / 2.0;
+            const gId = mId.split("M")[0];
+            const segmentsList = memberProps?.girder_details?.[gId]?.segments || [];
+            const activeSegIndex = segmentsList.findIndex((s: any) => s.id === mId);
+            const isSegExterior = activeSegIndex === 0 || activeSegIndex === segmentsList.length - 1;
+            
+            if (isSegExterior && stiff.bearing_outstand_mm) {
+              const val = Number(stiff.bearing_outstand_mm);
+              if (!isNaN(val) && val > maxOutstand) {
+                errors.push(
+                  `Outstand of Bearing Stiffener (mm) must be between 0 and ${maxOutstand.toFixed(3)} for member '${mId}'.`
+                );
+              }
+            }
+
+            if (stiff.intermediate_stiffener === "Yes" && stiff.intermediate_outstand_mm) {
+              const val = Number(stiff.intermediate_outstand_mm);
+              if (!isNaN(val) && val > maxOutstand) {
+                errors.push(
+                  `Outstand of Intermediate Stiffener (mm) must be between 0 and ${maxOutstand.toFixed(3)} for member '${mId}'.`
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      alert("Please fix the validation errors before saving:\n\n" + errors.join("\n"));
+      return;
+    }
+
     const updatedData = {
       ...bridgeData,
       girder_spacing:       Number(form.girderSpacing),
@@ -412,7 +605,7 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       median_type:          form.medianType,
       wearing_course_thickness: Number(form.wearingCourseThickness),
 
-      member_properties:    memberProps,
+      member_properties:    serializeMemberProperties(memberProps),
     };
 
     try {
@@ -477,6 +670,7 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
           return (
             <StiffenerDetailsTab
               memberProps={memberProps}
+              setMemberProps={setMemberProps}
               updateStiffenerField={updateStiffenerField}
               getStiffenerMemberIds={getStiffenerMemberIds}
             />
