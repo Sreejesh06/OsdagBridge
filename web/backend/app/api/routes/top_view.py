@@ -80,12 +80,36 @@ def _build_params(data: BridgeInput) -> dict:
     cw_raw = data.carriageway_width or data.overall_bridge_width or data.width
     cw_mm  = _to_mm(cw_raw, 12_000)
 
+    # ── Cross bracing spacing ─────────────────────────────────────────────
+    cb_spacing_m = 3.5
+    if data.member_properties and isinstance(data.member_properties, dict):
+        cross_bracing = data.member_properties.get("cross_bracing")
+        if isinstance(cross_bracing, dict):
+            spacing_val = cross_bracing.get("spacing")
+            if spacing_val is not None:
+                try:
+                    cb_spacing_m = float(spacing_val)
+                except ValueError:
+                    pass
+            else:
+                by_member = cross_bracing.get("cross_bracing_by_member")
+                if isinstance(by_member, dict) and by_member:
+                    first_member = list(by_member.values())[0]
+                    if isinstance(first_member, dict):
+                        spacing_val = first_member.get("spacing")
+                        if spacing_val is not None:
+                            try:
+                                cb_spacing_m = float(spacing_val)
+                            except ValueError:
+                                pass
+    cb_spacing_mm = _to_mm(cb_spacing_m, 3500.0)
+
     return {
         "span_length":           span_mm,
         "carriageway_width":     cw_mm,
         "num_girders":           int(data.no_of_girders or data.num_girders or 4),
         "girder_spacing":        _to_mm(data.girder_spacing,        2_750),
-        "cross_bracing_spacing": 3_500.0,
+        "cross_bracing_spacing": cb_spacing_mm,
         "skew_angle":            float(data.skew_angle or 0),
         "deck_overhang":         _to_mm(data.deck_overhang_width,   1_000),
         "footpath_width":        _to_mm(data.footpath_width,        1_500),

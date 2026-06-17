@@ -53,8 +53,59 @@ function normalizeMemberProperties(rawProps: any, noOfGirders: number, spanLengt
 
   // 3. Cross Bracing
   let crossBracing = rawProps.cross_bracing;
-  if (crossBracing && crossBracing.cross_bracing_by_pair) {
-    crossBracing = crossBracing.cross_bracing_by_pair;
+  const normalizedCrossBracing: Record<string, any> = {};
+
+  // Initialize defaults for all pairs
+  for (let i = 1; i < noOfGirders; i++) {
+    const pairId = `G${i} to G${i+1}`;
+    normalizedCrossBracing[pairId] = {
+      design: "Optimized",
+      bracing_type: "K-Bracing",
+      bracing_section_type: "Angle",
+      bracing_section: "ISA 5050x6",
+      top_chord_enabled: false,
+      top_chord_type: "Angle",
+      top_chord_size: "ISA 5050x6",
+      bottom_chord_enabled: true,
+      bottom_chord_type: "Angle",
+      bottom_chord_size: "ISA 5050x6",
+      spacing: "3.0"
+    };
+  }
+
+  if (crossBracing) {
+    if (crossBracing.cross_bracing_by_member) {
+      const byMember = crossBracing.cross_bracing_by_member;
+      for (let i = 1; i < noOfGirders; i++) {
+        const pairId = `G${i} to G${i+1}`;
+        const baseMember = `B${i}M1`;
+        if (byMember[baseMember]) {
+          normalizedCrossBracing[pairId] = {
+            ...normalizedCrossBracing[pairId],
+            ...byMember[baseMember]
+          };
+        }
+      }
+    } else if (crossBracing.cross_bracing_by_pair) {
+      const byPair = crossBracing.cross_bracing_by_pair;
+      for (const pairId in byPair) {
+        const normPairId = pairId.replace("-", " to ");
+        normalizedCrossBracing[normPairId] = {
+          ...normalizedCrossBracing[normPairId],
+          ...byPair[pairId]
+        };
+      }
+    } else if (typeof crossBracing === "object") {
+      for (const k in crossBracing) {
+        if (k.includes("-") || k.includes(" to ")) {
+          const normKey = k.replace("-", " to ");
+          normalizedCrossBracing[normKey] = {
+            ...normalizedCrossBracing[normKey],
+            ...crossBracing[k]
+          };
+        }
+      }
+    }
   }
 
   // 4. End Diaphragm
@@ -63,7 +114,7 @@ function normalizeMemberProperties(rawProps: any, noOfGirders: number, spanLengt
   return {
     girder_details: girderDetails || {},
     stiffener_details: normalizedStiffener,
-    cross_bracing: crossBracing || {},
+    cross_bracing: normalizedCrossBracing,
     end_diaphragm: endDiaphragm,
   };
 }
@@ -95,9 +146,43 @@ function serializeMemberProperties(memberProps: any) {
     stiffener_by_member: serializedStiffenerDetails
   };
 
-  // 3. Cross Bracing
+  // 3. Cross Bracing (Desktop exact serialization)
+  const crossBracingState = memberProps.cross_bracing || {};
+  const selectGirders = Object.keys(crossBracingState)[0] || "G1 to G2";
+  const memberId = "B1M1";
+
+  const byMember: Record<string, any> = {};
+  const pairs = Object.keys(crossBracingState);
+
+  const girders = Object.keys(memberProps.girder_details || {}).sort();
+  const firstGirder = girders[0] || "G1";
+  const segments = memberProps.girder_details[firstGirder]?.segments || [];
+  const totalSpanM = segments.reduce((sum: number, seg: any) => sum + Number(seg.length || 0), 0) || 30.0;
+
+  pairs.forEach((pairLabel, idx) => {
+    const pairIdx = idx + 1;
+    const brace = crossBracingState[pairLabel] || {};
+    const spacingM = parseFloat(String(brace.spacing || "3")) || 3;
+    const memberCount = Math.max(1, Math.floor(totalSpanM / spacingM - 1 + 1e-9));
+
+    for (let m = 1; m <= memberCount; m++) {
+      const mId = `B${pairIdx}M${m}`;
+      byMember[mId] = {
+        ...brace,
+        select_girders: pairLabel,
+        member_id: mId
+      };
+    }
+  });
+
+  const activePair = selectGirders;
+  const activeBrace = crossBracingState[activePair] || {};
+
   const finalCrossBracing = {
-    cross_bracing_by_pair: memberProps.cross_bracing || {}
+    select_girders: activePair,
+    member_id: memberId,
+    cross_bracing_by_member: byMember,
+    ...activeBrace,
   };
 
   // 4. End Diaphragm
@@ -202,7 +287,7 @@ function createDefaultMemberProperties(noOfGirders: number, spanLength: number) 
   }
 
   for (let i = 1; i < noOfGirders; i++) {
-    const pairId = `G${i}-G${i+1}`;
+    const pairId = `G${i} to G${i+1}`;
     crossBracing[pairId] = {
       design: "Optimized",
       bracing_type: "K-Bracing",
@@ -243,7 +328,7 @@ function createDefaultMemberProperties(noOfGirders: number, spanLength: number) 
 }
 
 export default function AdditionalInputsModal({ open, onClose }: Props) {
-  const { svgUrl, hasDesigned, bridgeData, setBridgeData, setSvgUrl, bridgeInput } =
+  const { svgUrl, hasDesigned, bridgeData, setBridgeData, setSvgUrl, bridgeInput, designMode } =
     useBridgeStore();
 
   const [form, setForm] = useState({
@@ -266,7 +351,6 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
   });
 
   const [memberProps, setMemberProps] = useState<any>({});
-  const [selectedBracingPair, setSelectedBracingPair] = useState<string>("G1-G2");
 
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -489,13 +573,7 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
     return ids;
   };
 
-  // Sync selectedBracingPair if it becomes invalid due to girder count changes
-  useEffect(() => {
-    const keys = Object.keys(memberProps?.cross_bracing || {});
-    if (keys.length > 0 && !keys.includes(selectedBracingPair)) {
-      setSelectedBracingPair(keys[0]);
-    }
-  }, [memberProps, selectedBracingPair]);
+  // (selectedBracingPair is now managed internally by CrossBracingDetailsTab)
 
   const handleDefaults = () => {
     const defaults = {
@@ -679,8 +757,6 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
           return (
             <CrossBracingDetailsTab
               memberProps={memberProps}
-              selectedBracingPair={selectedBracingPair}
-              setSelectedBracingPair={setSelectedBracingPair}
               updateBracingField={updateBracingField}
             />
           );

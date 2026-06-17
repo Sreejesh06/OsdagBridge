@@ -74,6 +74,29 @@ def _build_params(data: BridgeInput) -> dict:
         data.footpath_thickness or 200
     )
 
+    cb_spacing_m = 3.5
+    if data.member_properties and isinstance(data.member_properties, dict):
+        cross_bracing = data.member_properties.get("cross_bracing")
+        if isinstance(cross_bracing, dict):
+            spacing_val = cross_bracing.get("spacing")
+            if spacing_val is not None:
+                try:
+                    cb_spacing_m = float(spacing_val)
+                except ValueError:
+                    pass
+            else:
+                by_member = cross_bracing.get("cross_bracing_by_member")
+                if isinstance(by_member, dict) and by_member:
+                    first_member = list(by_member.values())[0]
+                    if isinstance(first_member, dict):
+                        spacing_val = first_member.get("spacing")
+                        if spacing_val is not None:
+                            try:
+                                cb_spacing_m = float(spacing_val)
+                            except ValueError:
+                                pass
+    cb_spacing_mm = _to_mm(cb_spacing_m, 3500.0)
+
     params = {
         "span_length":
             (data.span_length or 35000),
@@ -86,6 +109,9 @@ def _build_params(data: BridgeInput) -> dict:
 
         "girder_spacing":
             girder_spacing_mm,
+
+        "cross_bracing_spacing":
+            cb_spacing_mm,
 
         "deck_overhang":
             deck_overhang_mm,
@@ -183,6 +209,22 @@ def get_hover_zones():
 
     return JSONResponse(content=zones,
                         headers={"Cache-Control": "no-store"})
+
+
+@router.get("/steel-sections")
+def get_steel_sections():
+    """Return all angle and channel designations from the SQLite section catalog."""
+    try:
+        from osdagbridge.desktop.ui.widgets.section_viewer import SectionCatalog
+        catalog = SectionCatalog()
+        angles = catalog.list_angles()
+        channels = catalog.list_channels()
+        return JSONResponse(content={"angles": angles, "channels": channels})
+    except Exception as exc:
+        return JSONResponse(
+            content={"angles": [], "channels": [], "error": str(exc)},
+            status_code=200,
+        )
 
 
 @router.get("/rolled-sections")
