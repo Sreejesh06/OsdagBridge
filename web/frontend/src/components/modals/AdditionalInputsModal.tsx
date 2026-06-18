@@ -5,6 +5,7 @@ import CrossSectionCanvas from "../cad/CrossSectionCanvas";
 import { useBridgeStore, GREEN, API } from "../../store/bridgeStore";
 import { ROLLED_PROPERTIES } from "../constants/memberConstants";
 
+// Typical Section sub-tabs
 import LayoutTab from "./AdditionalInputs/sub_tabs/typical_section/LayoutTab";
 import CrashBarrierTab from "./AdditionalInputs/sub_tabs/typical_section/CrashBarrierTab";
 import MedianTab from "./AdditionalInputs/sub_tabs/typical_section/MedianTab";
@@ -12,10 +13,29 @@ import RailingTab from "./AdditionalInputs/sub_tabs/typical_section/RailingTab";
 import WearingCourseTab from "./AdditionalInputs/sub_tabs/typical_section/WearingCourseTab";
 import LaneDetailsTab from "./AdditionalInputs/sub_tabs/typical_section/LaneDetailsTab";
 
+// Member Properties sub-tabs
 import GirderDetailsTab from "./AdditionalInputs/sub_tabs/section_properties/GirderDetailsTab";
 import StiffenerDetailsTab from "./AdditionalInputs/sub_tabs/section_properties/StiffenerDetailsTab";
 import CrossBracingDetailsTab from "./AdditionalInputs/sub_tabs/section_properties/CrossBracingDetailsTab";
 import EndDiaphragmDetailsTab from "./AdditionalInputs/sub_tabs/section_properties/EndDiaphragmDetailsTab";
+
+// Loading sub-tabs
+import PermanentLoadTab from "./AdditionalInputs/sub_tabs/loading/PermanentLoadTab";
+import LiveLoadTab from "./AdditionalInputs/sub_tabs/loading/LiveLoadTab";
+import SeismicLoadTab from "./AdditionalInputs/sub_tabs/loading/SeismicLoadTab";
+import WindLoadTab from "./AdditionalInputs/sub_tabs/loading/WindLoadTab";
+import TemperatureLoadTab from "./AdditionalInputs/sub_tabs/loading/TemperatureLoadTab";
+import CustomLoadTab from "./AdditionalInputs/sub_tabs/loading/CustomLoadTab";
+import LoadCombinationTab from "./AdditionalInputs/sub_tabs/loading/LoadCombinationTab";
+
+// Support Conditions sub-tab
+import SupportConditionsTab from "./AdditionalInputs/sub_tabs/support_conditions/SupportConditionsTab";
+
+// Design Options sub-tab
+import DesignOptionsTab from "./AdditionalInputs/sub_tabs/design_options/DesignOptionsTab";
+
+// Design Options (Cont.) sub-tab
+import DesignOptionsContTab from "./AdditionalInputs/sub_tabs/design_options_cont/DesignOptionsContTab";
 
 type Props = {
   open: boolean;
@@ -331,7 +351,8 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
   const { svgUrl, hasDesigned, bridgeData, setBridgeData, setSvgUrl, bridgeInput, designMode } =
     useBridgeStore();
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<Record<string, any>>({
+    // Typical Section
     girderSpacing:      "",
     noOfGirders:        "",
     deckOverhangWidth:  "",
@@ -348,6 +369,118 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
     medianWidth:        "",
     medianType:         "",
     wearingCourseThickness: "",
+
+    // Loading - Permanent
+    selfWeightFactor: "1.00",
+
+    // Loading - Live Load
+    liveLoadVehicles: {
+      "Class A": true,
+      "Class 70R Wheeled": true,
+      "Class 70R Tracked": true,
+      "Class AA Wheeled": true,
+      "Class AA Tracked": true,
+      "Class SV": true,
+      "Class 70R Bogie": true,
+    },
+    footpathMode: "Automatic",
+    footpathPressure: "5.00",
+
+    // Loading - Seismic
+    seismicZone: "",
+    importanceFactor: "1.0",
+    soilType: "Type I \u2013 Rocky or Hard",
+    timePeriod: "",
+    damping: "2",
+    responseFactor: "1",
+    deadLoadSeismicMode: "Automatic",
+    deadLoadSeismicValue: "",
+    liveLoadSeismicMode: "Automatic",
+    liveLoadSeismicValue: "",
+
+    // Loading - Wind
+    basicWindSpeed: "",
+    avgExposedHeight: "10",
+    terrainType: "Plain Terrain",
+    siteTopography: "Flat",
+    gustFactorMode: "As per Code",
+    gustFactorValue: "",
+    dragCoeffMode: "As per Code",
+    dragCoeffValue: "",
+    dragCoeffLLMode: "As per Code",
+    dragCoeffLLValue: "",
+    liftCoeffMode: "As per Code",
+    liftCoeffValue: "",
+    superAreaElevMode: "Automatic",
+    superAreaElevValue: "",
+    superAreaPlainMode: "Automatic",
+    superAreaPlainValue: "",
+    exposedFrontalAreaMode: "Automatic",
+    exposedFrontalAreaValue: "",
+    windEccDeckMode: "As per Code",
+    windEccDeckValue: "",
+    windLLEccMode: "As per Code",
+    windLLEccValue: "",
+
+    // Loading - Temperature
+    highestMaxTemp: "",
+    lowestMinTemp: "",
+    thermalCoeffSteel: "12.0e-6",
+    thermalCoeffRCC: "12.0e-6",
+    bridgeTempMin: "",
+    bridgeTempMax: "",
+    tempRise: "",
+    tempFall: "",
+
+    // Loading - Custom
+    customLoads: [],
+
+    // Loading - Combinations
+    loadCombinations: {},
+
+    // Support Conditions
+    leftSupport: "Pinned",
+    rightSupport: "Roller",
+    bearingLength: "400",
+
+    // Design Options
+    constructionStage: "Yes",
+    reinforcementMaterial: "Fe 500",
+    topClearCover: "50",
+    bottomClearCover: "40",
+    sideClearCover: "40",
+    shearStudYieldStrength: "385.00",
+    shearStudUltimateStrength: "495.00",
+    shearStudDiameter: "20",
+    shearStudHeight: "100.00",
+    shearStudCount: "2",
+    shearStudTransverseSpacing: "100.00",
+
+    // Design Options (Cont.)
+    gammaCBasic: "1.50",
+    gammaCAccidental: "1.20",
+    gammaM0: "1.10",
+    gammaM1: "1.25",
+    gammaS: "1.15",
+    gammaV: "1.25",
+    gammaFlt: "1.00",
+    gammaMf: "1.35",
+    loadCycles: "2000000.00",
+    deflectionLimit: "600.00",
+    ultimateLimitStates: {
+      "Bending Resistance": true,
+      "Resistance to Vertical Shear": true,
+      "Resistance to Lateral-torsional Buckling": true,
+      "Resistance to Transverse force": true,
+      "Resistance to Longitudinal Shear": true,
+      "Resistance to Fatigue": true,
+    },
+    serviceabilityLimitStates: {
+      "Stress Limitation": true,
+      "Longitudinal Shear (SLS)": true,
+      "Deflection Control": true,
+      "Crack Width Check": true,
+    },
   });
 
   const [memberProps, setMemberProps] = useState<any>({});
@@ -396,12 +529,18 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
     if (activeTopTabIndex === 1) {
       return ["Girder Details", "Stiffener Details", "Cross-Bracing Details", "End Diaphragm Details"];
     }
+    if (activeTopTabIndex === 2) {
+      return ["Permanent Load", "Live Load", "Seismic Load", "Wind Load", "Temperature Load", "Custom Load", "Load Combination"];
+    }
+    // Tabs 3, 4, 5 have no sub-tabs (single content pane)
     return [];
   };
 
   useEffect(() => {
     if (!open || !bridgeData) return;
-    setForm({
+    setForm((prev: Record<string, any>) => ({
+      ...prev,
+      // Typical Section
       girderSpacing:      String(bridgeData.girder_spacing      ?? "4"),
       noOfGirders:        String(bridgeData.no_of_girders       ?? "4"),
       deckOverhangWidth:  String(bridgeData.deck_overhang_width ?? "1"),
@@ -418,7 +557,52 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       medianWidth:        String(bridgeData.median_width        ?? "1200"),
       medianType:         String(bridgeData.median_type         ?? "Raised"),
       wearingCourseThickness: String(bridgeData.wearing_course_thickness ?? "50"),
-    });
+
+      // Loading
+      selfWeightFactor:   String((bridgeData as any).self_weight_factor ?? "1.00"),
+      liveLoadVehicles:   (bridgeData as any).live_load_vehicles ?? prev.liveLoadVehicles,
+      footpathMode:       String((bridgeData as any).footpath_mode ?? "Automatic"),
+      seismicZone:        String((bridgeData as any).seismic_zone ?? ""),
+      importanceFactor:   String((bridgeData as any).importance_factor ?? "1.0"),
+      soilType:           String((bridgeData as any).soil_type ?? "Type I \u2013 Rocky or Hard"),
+      timePeriod:         String((bridgeData as any).time_period ?? ""),
+      damping:            String((bridgeData as any).damping_percentage ?? "2"),
+      responseFactor:     String((bridgeData as any).response_factor ?? "1"),
+      customLoads:        (bridgeData as any).custom_loads ?? [],
+      loadCombinations:   (bridgeData as any).load_combinations ?? {},
+
+      // Support Conditions
+      leftSupport:        String((bridgeData as any).left_support   ?? "Pinned"),
+      rightSupport:       String((bridgeData as any).right_support  ?? "Roller"),
+      bearingLength:      String((bridgeData as any).bearing_length ?? "400"),
+
+      // Design Options
+      constructionStage:            String((bridgeData as any).construction_stage          ?? "Yes"),
+      reinforcementMaterial:        String((bridgeData as any).reinforcement_material      ?? "Fe 500"),
+      topClearCover:                String((bridgeData as any).top_clear_cover             ?? "50"),
+      bottomClearCover:             String((bridgeData as any).bottom_clear_cover          ?? "40"),
+      sideClearCover:               String((bridgeData as any).side_clear_cover            ?? "40"),
+      shearStudYieldStrength:       String((bridgeData as any).shear_stud_yield_strength   ?? "385.00"),
+      shearStudUltimateStrength:    String((bridgeData as any).shear_stud_ultimate_strength ?? "495.00"),
+      shearStudDiameter:            String((bridgeData as any).shear_stud_diameter         ?? "20"),
+      shearStudHeight:              String((bridgeData as any).shear_stud_height           ?? "100.00"),
+      shearStudCount:               String((bridgeData as any).shear_stud_count            ?? "2"),
+      shearStudTransverseSpacing:   String((bridgeData as any).shear_stud_transverse_spacing ?? "100.00"),
+
+      // Design Options (Cont.)
+      gammaCBasic:      String((bridgeData as any).gamma_c_basic     ?? "1.50"),
+      gammaCAccidental: String((bridgeData as any).gamma_c_accidental ?? "1.20"),
+      gammaM0:          String((bridgeData as any).gamma_m0          ?? "1.10"),
+      gammaM1:          String((bridgeData as any).gamma_m1          ?? "1.25"),
+      gammaS:           String((bridgeData as any).gamma_s           ?? "1.15"),
+      gammaV:           String((bridgeData as any).gamma_v           ?? "1.25"),
+      gammaFlt:         String((bridgeData as any).gamma_flt         ?? "1.00"),
+      gammaMf:          String((bridgeData as any).gamma_mf          ?? "1.35"),
+      loadCycles:       String((bridgeData as any).load_cycles       ?? "2000000.00"),
+      deflectionLimit:  String((bridgeData as any).deflection_limit  ?? "600.00"),
+      ultimateLimitStates:       (bridgeData as any).ultimate_limit_states        ?? prev.ultimateLimitStates,
+      serviceabilityLimitStates: (bridgeData as any).serviceability_limit_states ?? prev.serviceabilityLimitStates,
+    }));
 
     const initialMemberProps = normalizeMemberProperties(
       bridgeData.member_properties,
@@ -576,7 +760,8 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
   // (selectedBracingPair is now managed internally by CrossBracingDetailsTab)
 
   const handleDefaults = () => {
-    const defaults = {
+    const defaults: Record<string, any> = {
+      // Typical Section
       girderSpacing:      "4",
       noOfGirders:        "4",
       deckOverhangWidth:  "1",
@@ -593,6 +778,58 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       medianWidth:        "1200",
       medianType:         "Raised",
       wearingCourseThickness: "50",
+
+      // Loading - Permanent
+      selfWeightFactor: "1.00",
+
+      // Loading - Live
+      liveLoadVehicles: { "Class A": true, "Class 70R Wheeled": true, "Class 70R Tracked": true, "Class AA Wheeled": true, "Class AA Tracked": true, "Class SV": true, "Class 70R Bogie": true },
+      footpathMode: "Automatic", footpathPressure: "5.00",
+
+      // Loading - Seismic
+      seismicZone: "", importanceFactor: "1.0", soilType: "Type I \u2013 Rocky or Hard",
+      timePeriod: "", damping: "2", responseFactor: "1",
+      deadLoadSeismicMode: "Automatic", deadLoadSeismicValue: "",
+      liveLoadSeismicMode: "Automatic", liveLoadSeismicValue: "",
+
+      // Loading - Wind
+      basicWindSpeed: "", avgExposedHeight: "10", terrainType: "Plain Terrain", siteTopography: "Flat",
+      gustFactorMode: "As per Code", gustFactorValue: "",
+      dragCoeffMode: "As per Code", dragCoeffValue: "",
+      dragCoeffLLMode: "As per Code", dragCoeffLLValue: "",
+      liftCoeffMode: "As per Code", liftCoeffValue: "",
+      superAreaElevMode: "Automatic", superAreaElevValue: "",
+      superAreaPlainMode: "Automatic", superAreaPlainValue: "",
+      exposedFrontalAreaMode: "Automatic", exposedFrontalAreaValue: "",
+      windEccDeckMode: "As per Code", windEccDeckValue: "",
+      windLLEccMode: "As per Code", windLLEccValue: "",
+
+      // Loading - Temperature
+      highestMaxTemp: "", lowestMinTemp: "",
+      thermalCoeffSteel: "12.0e-6", thermalCoeffRCC: "12.0e-6",
+      bridgeTempMin: "", bridgeTempMax: "", tempRise: "", tempFall: "",
+
+      // Loading - Custom & Combinations
+      customLoads: [], loadCombinations: {},
+
+      // Support Conditions
+      leftSupport: "Pinned", rightSupport: "Roller", bearingLength: "400",
+
+      // Design Options
+      constructionStage: "Yes", reinforcementMaterial: "Fe 500",
+      topClearCover: "50", bottomClearCover: "40", sideClearCover: "40",
+      shearStudYieldStrength: "385.00", shearStudUltimateStrength: "495.00",
+      shearStudDiameter: "20", shearStudHeight: "100.00",
+      shearStudCount: "2", shearStudTransverseSpacing: "100.00",
+
+      // Design Options (Cont.)
+      gammaCBasic: "1.50", gammaCAccidental: "1.20",
+      gammaM0: "1.10", gammaM1: "1.25",
+      gammaS: "1.15", gammaV: "1.25",
+      gammaFlt: "1.00", gammaMf: "1.35",
+      loadCycles: "2000000.00", deflectionLimit: "600.00",
+      ultimateLimitStates: { "Bending Resistance": true, "Resistance to Vertical Shear": true, "Resistance to Lateral-torsional Buckling": true, "Resistance to Transverse force": true, "Resistance to Longitudinal Shear": true, "Resistance to Fatigue": true },
+      serviceabilityLimitStates: { "Stress Limitation": true, "Longitudinal Shear (SLS)": true, "Deflection Control": true, "Crack Width Check": true },
     };
     setForm(defaults);
 
@@ -684,6 +921,50 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       wearing_course_thickness: Number(form.wearingCourseThickness),
 
       member_properties:    serializeMemberProperties(memberProps),
+
+      // Loading fields
+      self_weight_factor:   Number(form.selfWeightFactor ?? 1),
+      live_load_vehicles:   form.liveLoadVehicles ?? {},
+      seismic_zone:         form.seismicZone,
+      importance_factor:    Number(form.importanceFactor ?? 1),
+      soil_type:            form.soilType,
+      time_period:          Number(form.timePeriod ?? 0),
+      damping_percentage:   Number(form.damping ?? 2),
+      response_factor:      Number(form.responseFactor ?? 1),
+      custom_loads:         form.customLoads ?? [],
+      load_combinations:    form.loadCombinations ?? {},
+
+      // Support Conditions
+      left_support:         form.leftSupport ?? "Pinned",
+      right_support:        form.rightSupport ?? "Roller",
+      bearing_length:       Number(form.bearingLength ?? 400),
+
+      // Design Options
+      construction_stage:              form.constructionStage ?? "Yes",
+      reinforcement_material:          form.reinforcementMaterial ?? "Fe 500",
+      top_clear_cover:                 Number(form.topClearCover ?? 50),
+      bottom_clear_cover:              Number(form.bottomClearCover ?? 40),
+      side_clear_cover:                Number(form.sideClearCover ?? 40),
+      shear_stud_yield_strength:       Number(form.shearStudYieldStrength ?? 385),
+      shear_stud_ultimate_strength:    Number(form.shearStudUltimateStrength ?? 495),
+      shear_stud_diameter:             Number(form.shearStudDiameter ?? 20),
+      shear_stud_height:               Number(form.shearStudHeight ?? 100),
+      shear_stud_count:                Number(form.shearStudCount ?? 2),
+      shear_stud_transverse_spacing:   Number(form.shearStudTransverseSpacing ?? 100),
+
+      // Partial factors & Limit States
+      gamma_c_basic:                   Number(form.gammaCBasic ?? 1.5),
+      gamma_c_accidental:              Number(form.gammaCAccidental ?? 1.2),
+      gamma_m0:                        Number(form.gammaM0 ?? 1.1),
+      gamma_m1:                        Number(form.gammaM1 ?? 1.25),
+      gamma_s:                         Number(form.gammaS ?? 1.15),
+      gamma_v:                         Number(form.gammaV ?? 1.25),
+      gamma_flt:                       Number(form.gammaFlt ?? 1.0),
+      gamma_mf:                        Number(form.gammaMf ?? 1.35),
+      load_cycles:                     Number(form.loadCycles ?? 2000000),
+      deflection_limit:                Number(form.deflectionLimit ?? 600),
+      ultimate_limit_states:           form.ultimateLimitStates ?? {},
+      serviceability_limit_states:     form.serviceabilityLimitStates ?? {},
     };
 
     try {
@@ -772,6 +1053,35 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
         default:
           return null;
       }
+    }
+
+    // Tab 2: Loading
+    if (activeTopTabIndex === 2) {
+      switch (activeBottomTabIndex) {
+        case 0: return <PermanentLoadTab form={form} updateField={updateField} />;
+        case 1: return <LiveLoadTab form={form} updateField={updateField} />;
+        case 2: return <SeismicLoadTab form={form} updateField={updateField} />;
+        case 3: return <WindLoadTab form={form} updateField={updateField} />;
+        case 4: return <TemperatureLoadTab form={form} updateField={updateField} />;
+        case 5: return <CustomLoadTab form={form} updateField={updateField} />;
+        case 6: return <LoadCombinationTab form={form} updateField={updateField} />;
+        default: return null;
+      }
+    }
+
+    // Tab 3: Support Conditions
+    if (activeTopTabIndex === 3) {
+      return <SupportConditionsTab form={form} updateField={updateField} />;
+    }
+
+    // Tab 4: Analysis/Design Options
+    if (activeTopTabIndex === 4) {
+      return <DesignOptionsTab form={form} updateField={updateField} />;
+    }
+
+    // Tab 5: Design Options (Cont.)
+    if (activeTopTabIndex === 5) {
+      return <DesignOptionsContTab form={form} updateField={updateField} />;
     }
 
     return (
