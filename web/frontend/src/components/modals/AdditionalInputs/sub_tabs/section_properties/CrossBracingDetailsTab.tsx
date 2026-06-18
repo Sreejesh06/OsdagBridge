@@ -463,7 +463,7 @@ export default function CrossBracingDetailsTab({
   const totalSpanM: number = (() => {
     const girders = Object.keys(memberProps?.girder_details || {});
     if (girders.length === 0) return 0;
-    const segs: any[] = memberProps.girder_details[girders[0]]?.segments || [];
+    const segs: any[] = memberProps?.girder_details?.[girders[0]]?.segments || [];
     return segs.reduce((s: number, seg: any) => s + Number(seg.length || 0), 0);
   })();
 

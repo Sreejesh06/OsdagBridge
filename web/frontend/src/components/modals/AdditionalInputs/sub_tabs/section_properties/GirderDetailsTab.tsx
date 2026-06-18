@@ -3,6 +3,15 @@ import { useBridgeStore, API } from "../../../../../store/bridgeStore";
 import { Label, Input, Select } from "../../SharedComponents";
 import { SAIL_APPROVED_THICKNESS_VALUES, ROLLED_IS_SECTIONS, ROLLED_PROPERTIES } from "../../../../constants/memberConstants";
 
+function parseSingleThicknessValue(valStr: any, fallback: number): number {
+  if (valStr === undefined || valStr === null || valStr === "") return fallback;
+  const str = String(valStr);
+  const parts = str.split(",").map(s => s.trim()).filter(Boolean);
+  if (parts.length === 0) return fallback;
+  const num = Number(parts[0]);
+  return isNaN(num) ? fallback : num;
+}
+
 function calculateSectionProperties(currentSegment: any, type: string, rolledProperties?: Record<string, any>) {
   if (type === "Rolled") {
     const sectionName = currentSegment.is_section || "MB 500";
@@ -28,9 +37,9 @@ function calculateSectionProperties(currentSegment: any, type: string, rolledPro
   const depth = Number(currentSegment.depth ?? currentSegment.total_depth_mm ?? 1500);
   const top_width = Number(currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? 400);
   const bottom_width = Number(currentSegment.bottom_flange_width ?? currentSegment.bottom_flange_width_mm ?? 400);
-  const web_thickness = Number(currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? 12);
-  const top_thickness = Number(currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? 20);
-  const bottom_thickness = Number(currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm ?? 20);
+  const web_thickness = parseSingleThicknessValue(currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm, 12);
+  const top_thickness = parseSingleThicknessValue(currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm, 20);
+  const bottom_thickness = parseSingleThicknessValue(currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm, 20);
 
   const h_web = Math.max(depth - top_thickness - bottom_thickness, 1.0);
   const area_top = top_width * top_thickness;
@@ -117,6 +126,88 @@ export default function GirderDetailsTab({
   const [tempLower, setTempLower] = useState<string>("");
   const [tempUpper, setTempUpper] = useState<string>("");
   const [tempIncrement, setTempIncrement] = useState<string>("");
+
+  // Thickness Multi-Select Modal state
+  const [thicknessModalOpen, setThicknessModalOpen] = useState<boolean>(false);
+  const [activeThicknessField, setActiveThicknessField] = useState<string | null>(null); // "web_thickness_value" | "top_flange_thickness_value" | "bottom_flange_thickness_value"
+  const [tempSelectedThicknesses, setTempSelectedThicknesses] = useState<string[]>([]);
+  const [highlightedAvailable, setHighlightedAvailable] = useState<string[]>([]);
+  const [highlightedSelected, setHighlightedSelected] = useState<string[]>([]);
+
+  const handleOpenThicknessDialog = (fieldName: string, currentVal: any) => {
+    setActiveThicknessField(fieldName);
+    const currentValStr = String(currentVal || "");
+    const parsed = currentValStr ? currentValStr.split(",").map(v => v.trim()).filter(v => SAIL_APPROVED_THICKNESS_VALUES.includes(v)) : [];
+    const initialSelected = parsed.length > 0 ? parsed : [...SAIL_APPROVED_THICKNESS_VALUES];
+    setTempSelectedThicknesses(initialSelected);
+    setHighlightedAvailable([]);
+    setHighlightedSelected([]);
+    setThicknessModalOpen(true);
+  };
+
+  const handleSaveThicknesses = () => {
+    if (activeThicknessField === null) return;
+    const sorted = [...tempSelectedThicknesses].sort((a, b) => {
+      const idxA = SAIL_APPROVED_THICKNESS_VALUES.indexOf(a);
+      const idxB = SAIL_APPROVED_THICKNESS_VALUES.indexOf(b);
+      return idxA - idxB;
+    });
+    const joined = sorted.join(", ");
+    
+    const suffix = activeThicknessField === "web_thickness_value" ? "web_thickness_value_mm" :
+                   activeThicknessField === "top_flange_thickness_value" ? "top_thickness_value_mm" :
+                   "bottom_thickness_value_mm";
+    
+    updateGirderField(selectedGirder, safeSegmentIndex, activeThicknessField, joined);
+    updateGirderField(selectedGirder, safeSegmentIndex, suffix, joined);
+
+    if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
+      if (activeThicknessField === "top_flange_thickness_value") {
+        updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", joined);
+        updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", joined);
+      } else if (activeThicknessField === "bottom_flange_thickness_value") {
+        updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_value", joined);
+        updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_value_mm", joined);
+      }
+    }
+
+    setThicknessModalOpen(false);
+  };
+
+  const moveAllRight = () => {
+    setTempSelectedThicknesses([...SAIL_APPROVED_THICKNESS_VALUES]);
+    setHighlightedAvailable([]);
+    setHighlightedSelected([]);
+  };
+
+  const moveSelectedRight = () => {
+    const nextSelected = [...tempSelectedThicknesses, ...highlightedAvailable];
+    const uniqueSelected = Array.from(new Set(nextSelected));
+    setTempSelectedThicknesses(uniqueSelected);
+    setHighlightedAvailable([]);
+  };
+
+  const moveSelectedLeft = () => {
+    const nextSelected = tempSelectedThicknesses.filter(v => !highlightedSelected.includes(v));
+    setTempSelectedThicknesses(nextSelected);
+    setHighlightedSelected([]);
+  };
+
+  const moveAllLeft = () => {
+    setTempSelectedThicknesses([]);
+    setHighlightedAvailable([]);
+    setHighlightedSelected([]);
+  };
+
+  const getSortedAvailable = () => {
+    return SAIL_APPROVED_THICKNESS_VALUES.filter(v => !tempSelectedThicknesses.includes(v));
+  };
+
+  const getSortedSelected = () => {
+    return [...tempSelectedThicknesses].sort((a, b) => {
+      return SAIL_APPROVED_THICKNESS_VALUES.indexOf(a) - SAIL_APPROVED_THICKNESS_VALUES.indexOf(b);
+    });
+  };
 
   const activeRolledProperties = Object.keys(rolledProperties).length > 0 ? rolledProperties : ROLLED_PROPERTIES;
   const activeRolledIsSections = rolledIsSections.length > 0 ? rolledIsSections : ROLLED_IS_SECTIONS;
@@ -406,9 +497,9 @@ export default function GirderDetailsTab({
     const tfw_val = isWelded ? Number(currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? 400) : rolledProp?.tfw || 180;
     const bfw_val = isWelded ? Number(currentSegment.bottom_flange_width ?? currentSegment.bottom_flange_width_mm ?? 400) : rolledProp?.bfw || 180;
     const depth_val = isWelded ? Number(currentSegment.depth ?? currentSegment.total_depth_mm ?? 1500) : rolledProp?.depth || 500;
-    const tft_val = isWelded ? Number(currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? 20) : rolledProp?.tft || 17.2;
-    const bft_val = isWelded ? Number(currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm ?? 20) : rolledProp?.bft || 17.2;
-    const wt_val = isWelded ? Number(currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? 12) : rolledProp?.wt || 10.2;
+    const tft_val = isWelded ? parseSingleThicknessValue(currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm, 20) : rolledProp?.tft || 17.2;
+    const bft_val = isWelded ? parseSingleThicknessValue(currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm, 20) : rolledProp?.bft || 17.2;
+    const wt_val = isWelded ? parseSingleThicknessValue(currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm, 12) : rolledProp?.wt || 10.2;
 
     // scaling coordinates
     const CenterX = 180;
@@ -669,9 +760,9 @@ export default function GirderDetailsTab({
                   const topW = isWelded ? Number(seg.top_flange_width ?? seg.top_flange_width_mm ?? 400) : rolledProp?.tfw || 180;
                   const botW = isWelded ? Number(seg.bottom_flange_width ?? seg.bottom_flange_width_mm ?? 400) : rolledProp?.bfw || 180;
                   const depth = isWelded ? Number(seg.depth ?? seg.total_depth_mm ?? 1500) : rolledProp?.depth || 500;
-                  const webT = isWelded ? Number(seg.web_thickness_value ?? seg.web_thickness_value_mm ?? 12) : rolledProp?.wt || 10.2;
-                  const topT = isWelded ? Number(seg.top_flange_thickness_value ?? seg.top_thickness_value_mm ?? 20) : rolledProp?.tft || 17.2;
-                  const botT = isWelded ? Number(seg.bottom_flange_thickness_value ?? seg.bottom_thickness_value_mm ?? 20) : rolledProp?.bft || 17.2;
+                  const webT = isWelded ? parseSingleThicknessValue(seg.web_thickness_value ?? seg.web_thickness_value_mm, 12) : rolledProp?.wt || 10.2;
+                  const topT = isWelded ? parseSingleThicknessValue(seg.top_flange_thickness_value ?? seg.top_thickness_value_mm, 20) : rolledProp?.tft || 17.2;
+                  const botT = isWelded ? parseSingleThicknessValue(seg.bottom_flange_thickness_value ?? seg.bottom_thickness_value_mm, 20) : rolledProp?.bft || 17.2;
 
                   const scaleY = 70 / depth;
                   const scaleX = 140 / Math.max(topW, botW);
@@ -1023,12 +1114,6 @@ export default function GirderDetailsTab({
                   >
                     Set Bounds
                   </button>
-                  <span style={{ fontSize: 11, color: "#555" }}>
-                    {(() => {
-                      const b = currentSegment.total_depth_bounds || { lower: 200, upper: 2000, increment: 25 };
-                      return `${b.lower} - ${b.upper} (${b.increment})`;
-                    })()}
-                  </span>
                 </div>
               ) : (
                 <Input
@@ -1058,12 +1143,6 @@ export default function GirderDetailsTab({
                   >
                     Set Bounds
                   </button>
-                  <span style={{ fontSize: 11, color: "#555" }}>
-                    {(() => {
-                      const b = currentSegment.top_flange_width_bounds || { lower: 100, upper: 1000, increment: 10 };
-                      return `${b.lower} - ${b.upper} (${b.increment})`;
-                    })()}
-                  </span>
                 </div>
               ) : (
                 <Input
@@ -1082,35 +1161,22 @@ export default function GirderDetailsTab({
 
               <Label>Top Flange Thickness, t<sub>ft</sub> (mm):</Label>
               {isOptimized ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <Select
-                    value={currentSegment.top_flange_thickness_mode ?? currentSegment.top_thickness_mode ?? "All"}
-                    onChange={e => {
-                      updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_mode", e.target.value);
-                      updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_mode", e.target.value);
-                      if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                        updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_mode", e.target.value);
-                        updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_mode", e.target.value);
-                      }
-                    }}
-                    options={["All", "Custom"]}
-                  />
-                  {(currentSegment.top_flange_thickness_mode === "Custom" || currentSegment.top_thickness_mode === "Custom") && (
-                    <Select
-                      value={currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "8"}
-                      onChange={e => {
-                        const val = e.target.value;
-                        updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_value", val);
-                        updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_value_mm", val);
-                        if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                          updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", val);
-                          updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", val);
-                        }
-                      }}
-                      options={SAIL_APPROVED_THICKNESS_VALUES}
-                    />
-                  )}
-                </div>
+                <Select
+                  value={currentSegment.top_flange_thickness_mode ?? currentSegment.top_thickness_mode ?? "All"}
+                  onChange={e => {
+                    const val = e.target.value;
+                    updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_mode", val);
+                    updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_mode", val);
+                    if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
+                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_mode", val);
+                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_mode", val);
+                    }
+                    if (val === "Custom") {
+                      handleOpenThicknessDialog("top_flange_thickness_value", currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "");
+                    }
+                  }}
+                  options={["All", "Custom"]}
+                />
               ) : (
                 <Select
                   value={currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "20"}
@@ -1145,14 +1211,6 @@ export default function GirderDetailsTab({
                   >
                     Set Bounds
                   </button>
-                  <span style={{ fontSize: 11, color: "#555" }}>
-                    {(() => {
-                      const b = ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
-                        ? (currentSegment.top_flange_width_bounds || { lower: 100, upper: 1000, increment: 10 })
-                        : (currentSegment.bottom_flange_width_bounds || { lower: 100, upper: 1000, increment: 10 });
-                      return `${b.lower} - ${b.upper} (${b.increment})`;
-                    })()}
-                  </span>
                 </div>
               ) : (
                 <Input
@@ -1173,41 +1231,24 @@ export default function GirderDetailsTab({
 
               <Label>Bottom Flange Thickness, b<sub>ft</sub> (mm):</Label>
               {isOptimized ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <Select
-                    value={((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
-                      ? (currentSegment.top_flange_thickness_mode ?? currentSegment.top_thickness_mode ?? "All")
-                      : (currentSegment.bottom_flange_thickness_mode ?? currentSegment.bottom_thickness_mode ?? "All")}
-                    onChange={e => {
-                      const val = e.target.value;
-                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_mode", val);
-                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_mode", val);
-                      if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                        updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_mode", val);
-                        updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_mode", val);
-                      }
-                    }}
-                    options={["All", "Custom"]}
-                  />
-                  {(((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric" && (currentSegment.top_flange_thickness_mode === "Custom" || currentSegment.top_thickness_mode === "Custom")) ||
-                    ((currentSegment.symmetry || "Girder Symmetric") !== "Girder Symmetric" && (currentSegment.bottom_flange_thickness_mode === "Custom" || currentSegment.bottom_thickness_mode === "Custom"))) && (
-                    <Select
-                      value={((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
-                        ? (currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "8")
-                        : (currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm ?? "8")}
-                      onChange={e => {
-                        const val = e.target.value;
-                        updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", val);
-                        updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", val);
-                        if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                          updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_value", val);
-                          updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_value_mm", val);
-                        }
-                      }}
-                      options={SAIL_APPROVED_THICKNESS_VALUES}
-                    />
-                  )}
-                </div>
+                <Select
+                  value={((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
+                    ? (currentSegment.top_flange_thickness_mode ?? currentSegment.top_thickness_mode ?? "All")
+                    : (currentSegment.bottom_flange_thickness_mode ?? currentSegment.bottom_thickness_mode ?? "All")}
+                  onChange={e => {
+                    const val = e.target.value;
+                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_mode", val);
+                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_mode", val);
+                    if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
+                      updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_mode", val);
+                      updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_mode", val);
+                    }
+                    if (val === "Custom") {
+                      handleOpenThicknessDialog("bottom_flange_thickness_value", currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm ?? "");
+                    }
+                  }}
+                  options={["All", "Custom"]}
+                />
               ) : (
                 <Select
                   value={((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
@@ -1244,23 +1285,17 @@ export default function GirderDetailsTab({
 
               <Label>Web Thickness, w<sub>t</sub> (mm):</Label>
               {isOptimized ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <Select
-                    value={currentSegment.web_thickness_mode ?? "All"}
-                    onChange={e => updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_mode", e.target.value)}
-                    options={["All", "Custom"]}
-                  />
-                  {(currentSegment.web_thickness_mode === "Custom") && (
-                    <Select
-                      value={currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? "8"}
-                      onChange={e => {
-                        updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_value", e.target.value);
-                        updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_value_mm", e.target.value);
-                      }}
-                      options={SAIL_APPROVED_THICKNESS_VALUES}
-                    />
-                  )}
-                </div>
+                <Select
+                  value={currentSegment.web_thickness_mode ?? "All"}
+                  onChange={e => {
+                    const val = e.target.value;
+                    updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_mode", val);
+                    if (val === "Custom") {
+                      handleOpenThicknessDialog("web_thickness_value", currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? "");
+                    }
+                  }}
+                  options={["All", "Custom"]}
+                />
               ) : (
                 <Select
                   value={currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? "12"}
@@ -1401,6 +1436,258 @@ export default function GirderDetailsTab({
                   style={{ padding: "6px 12px", background: "#90AF13", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 12 }}
                 >
                   OK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thickness Multi-Select Modal */}
+      {thicknessModalOpen && activeThicknessField !== null && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 10000,
+        }}>
+          <div style={{
+            background: "#ffffff",
+            border: "1px solid #90AF13",
+            borderRadius: 8,
+            width: 620,
+            height: 520,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            fontFamily: '"Ubuntu Sans", sans-serif'
+          }}>
+            {/* Header / Title bar */}
+            <div style={{
+              background: "#90AF13",
+              color: "#ffffff",
+              padding: "12px 18px",
+              fontSize: 14,
+              fontWeight: 700,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
+              <span>
+                {activeThicknessField === "web_thickness_value" ? "Select Values: Web Thickness" :
+                 activeThicknessField === "top_flange_thickness_value" ? "Select Values: Top Flange Thickness" :
+                 "Select Values: Bottom Flange Thickness"}
+              </span>
+              <button 
+                onClick={() => setThicknessModalOpen(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#ffffff",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  cursor: "pointer"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Inner Content Area */}
+            <div style={{
+              background: "#f3f3f3",
+              flex: 1,
+              minHeight: 0,
+              padding: "18px 24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+              boxSizing: "border-box"
+            }}>
+              {/* Twin Columns with arrow buttons in between */}
+              <div style={{ display: "flex", flex: 1, gap: 18, alignItems: "stretch", minHeight: 0 }}>
+                {/* Available List Box */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8, minHeight: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#1f1f1f" }}>Available</div>
+                  <div style={{
+                    background: "#ffffff",
+                    border: "1px solid #c8c8c8",
+                    borderRadius: 10,
+                    padding: 8,
+                    overflowY: "auto",
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    minHeight: 0
+                  }}>
+                    {getSortedAvailable().map(val => {
+                      const isHighlighted = highlightedAvailable.includes(val);
+                      return (
+                        <div
+                          key={val}
+                          onClick={() => {
+                            if (isHighlighted) {
+                              setHighlightedAvailable(highlightedAvailable.filter(v => v !== val));
+                            } else {
+                              setHighlightedAvailable([...highlightedAvailable, val]);
+                            }
+                          }}
+                          style={{
+                            padding: "6px 10px",
+                            borderRadius: 4,
+                            cursor: "pointer",
+                            fontSize: 13,
+                            color: "#1f1f1f",
+                            background: isHighlighted ? "rgba(144, 175, 19, 0.2)" : "transparent",
+                            fontWeight: isHighlighted ? 600 : "normal",
+                            userSelect: "none"
+                          }}
+                        >
+                          {val}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Control Buttons (Middle) */}
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 10, width: 84 }}>
+                  <button
+                    onClick={moveAllRight}
+                    style={{
+                      height: 48,
+                      borderRadius: 10,
+                      background: "#90AF13",
+                      color: "#ffffff",
+                      border: "1px solid #90AF13",
+                      fontSize: 18,
+                      fontWeight: 800,
+                      cursor: "pointer"
+                    }}
+                  >
+                    &gt;&gt;
+                  </button>
+                  <button
+                    onClick={moveSelectedRight}
+                    disabled={highlightedAvailable.length === 0}
+                    style={{
+                      height: 48,
+                      borderRadius: 10,
+                      background: highlightedAvailable.length === 0 ? "#d2d2d2" : "#cfcfcf",
+                      color: highlightedAvailable.length === 0 ? "#8a8a8a" : "#6b6b6b",
+                      border: "1px solid " + (highlightedAvailable.length === 0 ? "#d2d2d2" : "#cfcfcf"),
+                      fontSize: 18,
+                      fontWeight: 800,
+                      cursor: highlightedAvailable.length === 0 ? "not-allowed" : "pointer"
+                    }}
+                  >
+                    &gt;
+                  </button>
+                  <button
+                    onClick={moveSelectedLeft}
+                    disabled={highlightedSelected.length === 0}
+                    style={{
+                      height: 48,
+                      borderRadius: 10,
+                      background: highlightedSelected.length === 0 ? "#d2d2d2" : "#cfcfcf",
+                      color: highlightedSelected.length === 0 ? "#8a8a8a" : "#6b6b6b",
+                      border: "1px solid " + (highlightedSelected.length === 0 ? "#d2d2d2" : "#cfcfcf"),
+                      fontSize: 18,
+                      fontWeight: 800,
+                      cursor: highlightedSelected.length === 0 ? "not-allowed" : "pointer"
+                    }}
+                  >
+                    &lt;
+                  </button>
+                  <button
+                    onClick={moveAllLeft}
+                    style={{
+                      height: 48,
+                      borderRadius: 10,
+                      background: "#90AF13",
+                      color: "#ffffff",
+                      border: "1px solid #90AF13",
+                      fontSize: 18,
+                      fontWeight: 800,
+                      cursor: "pointer"
+                    }}
+                  >
+                    &lt;&lt;
+                  </button>
+                </div>
+
+                {/* Selected List Box */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8, minHeight: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#1f1f1f" }}>Selected</div>
+                  <div style={{
+                    background: "#ffffff",
+                    border: "1px solid #c8c8c8",
+                    borderRadius: 10,
+                    padding: 8,
+                    overflowY: "auto",
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    minHeight: 0
+                  }}>
+                    {getSortedSelected().map(val => {
+                      const isHighlighted = highlightedSelected.includes(val);
+                      return (
+                        <div
+                          key={val}
+                          onClick={() => {
+                            if (isHighlighted) {
+                              setHighlightedSelected(highlightedSelected.filter(v => v !== val));
+                            } else {
+                              setHighlightedSelected([...highlightedSelected, val]);
+                            }
+                          }}
+                          style={{
+                            padding: "6px 10px",
+                            borderRadius: 4,
+                            cursor: "pointer",
+                            fontSize: 13,
+                            color: "#1f1f1f",
+                            background: isHighlighted ? "rgba(144, 175, 19, 0.2)" : "transparent",
+                            fontWeight: isHighlighted ? 600 : "normal",
+                            userSelect: "none"
+                          }}
+                        >
+                          {val}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Row */}
+              <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={handleSaveThicknesses}
+                  style={{
+                    height: 40,
+                    width: 220,
+                    background: "#90AF13",
+                    color: "#ffffff",
+                    border: "1px solid #90AF13",
+                    borderRadius: 10,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: "pointer"
+                  }}
+                >
+                  Submit
                 </button>
               </div>
             </div>

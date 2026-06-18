@@ -156,7 +156,7 @@ function serializeMemberProperties(memberProps: any) {
 
   const girders = Object.keys(memberProps.girder_details || {}).sort();
   const firstGirder = girders[0] || "G1";
-  const segments = memberProps.girder_details[firstGirder]?.segments || [];
+  const segments = memberProps?.girder_details?.[firstGirder]?.segments || [];
   const totalSpanM = segments.reduce((sum: number, seg: any) => sum + Number(seg.length || 0), 0) || 30.0;
 
   pairs.forEach((pairLabel, idx) => {
@@ -766,6 +766,7 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
               memberProps={memberProps}
               updateEndDiaphragmField={updateEndDiaphragmField}
               rolledIsSections={rolledIsSections}
+              rolledProperties={rolledProperties}
             />
           );
         default:

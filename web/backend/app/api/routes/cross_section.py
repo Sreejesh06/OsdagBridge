@@ -27,6 +27,13 @@ def _get_or_create_widget() -> CrossSectionCADWidget:
     return _widget
 
 
+def _to_mm(value: float | int | None, fallback_mm: float) -> float:
+    if value is None:
+        return fallback_mm
+    v = float(value)
+    return v * 1000.0 if v < 500 else v
+
+
 def _build_params(data: BridgeInput) -> dict:
 
     # ---- FRONTEND VALUES COME IN METERS ----
