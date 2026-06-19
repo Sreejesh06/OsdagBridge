@@ -1,5 +1,5 @@
 import React from "react";
-import { Label, Input, Select } from "../../SharedComponents";
+import { Label, Input, Select, TwoColumnLayout, LeftColumn, DescriptionBox, SectionBox } from "../../SharedComponents";
 
 const SOIL_TYPES = [
   "Type I – Rocky or Hard",
@@ -28,7 +28,7 @@ function ModeLineField({
   const isCustom = mode === "Custom";
   return (
     <>
-      <Label>{label}:</Label>
+      <Label>{label}</Label>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <select
           value={mode}
@@ -60,47 +60,63 @@ function ModeLineField({
 
 export default function SeismicLoadTab({ form, updateField }: SeismicLoadTabProps) {
   return (
-    <>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Seismic / Earthquake Load (EL):</div>
+    <TwoColumnLayout>
+      <LeftColumn>
+        <SectionBox title="Seismic / Earthquake Load (EL) Inputs">
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 260px",
+            rowGap: 12, columnGap: 30, alignItems: "center",
+          }}>
+            <Label>Seismic Zone</Label>
+            <Input value={form.seismicZone ?? ""} onChange={e => updateField("seismicZone", e.target.value)} />
 
-      <div style={{
-        border: "1px solid #ccc", borderRadius: 8,
-        background: "#fff", padding: "14px 18px", marginBottom: 14,
-      }}>
-        <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 10 }}>Seismic / Earthquake Load (EL) Inputs:</div>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 260px",
-          rowGap: 12, columnGap: 30, alignItems: "center",
-          maxWidth: 600,
-        }}>
-          <Label>Seismic Zone:</Label>
-          <Input value={form.seismicZone ?? ""} onChange={e => updateField("seismicZone", e.target.value)} placeholder="e.g. III" />
+            <Label>Importance Factor, I</Label>
+            <Input value={form.importanceFactor ?? "1.00"} onChange={e => updateField("importanceFactor", e.target.value)} />
 
-          <Label>Importance Factor, I:</Label>
-          <Input value={form.importanceFactor ?? "1.0"} onChange={e => updateField("importanceFactor", e.target.value)} />
+            <Label>Type of Soil</Label>
+            <Select value={form.soilType ?? SOIL_TYPES[0]} onChange={e => updateField("soilType", e.target.value)} options={SOIL_TYPES} />
 
-          <Label>Type of Soil:</Label>
-          <Select value={form.soilType ?? SOIL_TYPES[0]} onChange={e => updateField("soilType", e.target.value)} options={SOIL_TYPES} />
+            <Label>Fundamental Time Period, T (sec)</Label>
+            <Input value={form.timePeriod ?? ""} onChange={e => updateField("timePeriod", e.target.value)} />
 
-          <Label>Fundamental Time Period, T (sec):</Label>
-          <Input value={form.timePeriod ?? ""} onChange={e => updateField("timePeriod", e.target.value)} />
+            <Label>Damping Percentage</Label>
+            <Input value={form.damping ?? "2.00"} onChange={e => updateField("damping", e.target.value)} />
 
-          <Label>Damping Percentage:</Label>
-          <Input value={form.damping ?? "2"} onChange={e => updateField("damping", e.target.value)} />
+            <Label>Response Reduction Factor, R</Label>
+            <Select value={form.responseFactor ?? "1"} onChange={e => updateField("responseFactor", e.target.value)} options={RESPONSE_FACTORS} />
 
-          <Label>Response Reduction Factor, R:</Label>
-          <Select value={form.responseFactor ?? "1"} onChange={e => updateField("responseFactor", e.target.value)} options={RESPONSE_FACTORS} />
+            <ModeLineField label="Dead Load for Seismic Force (kN)" modeKey="deadLoadSeismicMode" valueKey="deadLoadSeismicValue" form={form} updateField={updateField} modeOptions={["Automatic", "Custom"]} />
+            <ModeLineField label="Live Load for Seismic Force (kN)" modeKey="liveLoadSeismicMode" valueKey="liveLoadSeismicValue" form={form} updateField={updateField} modeOptions={["Automatic", "Custom"]} />
+          </div>
+        </SectionBox>
 
-          <ModeLineField label="Dead Load for Seismic Force (kN)" modeKey="deadLoadSeismicMode" valueKey="deadLoadSeismicValue" form={form} updateField={updateField} modeOptions={["Automatic", "Custom"]} />
-          <ModeLineField label="Live Load for Seismic Force (kN)" modeKey="liveLoadSeismicMode" valueKey="liveLoadSeismicValue" form={form} updateField={updateField} modeOptions={["Automatic", "Custom"]} />
-        </div>
-      </div>
+        <SectionBox title="Computed Values">
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 260px",
+            rowGap: 12, columnGap: 30, alignItems: "center",
+          }}>
+            <Label>Zone Factor, Z</Label>
+            <Input value={form.zoneFactor ?? ""} readOnly disabled />
 
-      <div style={{ fontSize: 12, fontStyle: "italic", color: "#666" }}>
+            <Label>Spectral Acceleration Coefficient, S<sub>a</sub>/g</Label>
+            <Input value={form.spectralCoeff ?? ""} readOnly disabled />
+
+            <Label>Horizontal Seismic Coefficient, A<sub>h</sub></Label>
+            <Input value={form.horizontalCoeff ?? ""} readOnly disabled />
+
+            <Label>Vertical Seismic Coefficient, A<sub>v</sub></Label>
+            <Input value={form.verticalCoeff ?? ""} readOnly disabled />
+          </div>
+        </SectionBox>
+      </LeftColumn>
+
+      <DescriptionBox>
         Seismic Zone is auto-filled from software output (project location).
+        {"\n\n"}
         The spectral acceleration coefficient depends on soil type and fundamental time period, T.
-      </div>
-    </>
+      </DescriptionBox>
+    </TwoColumnLayout>
   );
 }

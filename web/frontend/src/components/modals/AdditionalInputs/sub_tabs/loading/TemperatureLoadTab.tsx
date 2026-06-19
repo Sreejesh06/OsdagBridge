@@ -1,5 +1,5 @@
 import React from "react";
-import { Label, Input } from "../../SharedComponents";
+import { Label, Input, TwoColumnLayout, LeftColumn, DescriptionBox, SectionBox } from "../../SharedComponents";
 
 interface TemperatureLoadTabProps {
   form: any;
@@ -25,80 +25,63 @@ function ReadOnlyInput({ value, placeholder }: { value: string; placeholder?: st
 
 export default function TemperatureLoadTab({ form, updateField }: TemperatureLoadTabProps) {
   return (
-    <>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Temperature Load (TL):</div>
+    <TwoColumnLayout>
+      <LeftColumn>
+        {/* Inputs Section */}
+        <SectionBox title="Temperature Load (TL) Inputs for Evaluation per IRC6">
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 220px",
+            rowGap: 12, columnGap: 30, alignItems: "center",
+          }}>
+            <Label>Highest Maximum Air Temperature (°C)</Label>
+            <ReadOnlyInput value={form.highestMaxTemp ?? ""} placeholder="From Project Location" />
 
-      {/* Inputs Section */}
-      <div style={{
-        border: "1px solid #ccc", borderRadius: 8,
-        background: "#fff", padding: "14px 18px", marginBottom: 14,
-      }}>
-        <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 10 }}>
-          Temperature Load (TL) Inputs for Evaluation per IRC6:
-        </div>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 220px",
-          rowGap: 12, columnGap: 30, alignItems: "center",
-          maxWidth: 600,
-        }}>
-          <Label>Highest Maximum Air Temperature (°C):</Label>
-          <ReadOnlyInput value={form.highestMaxTemp ?? ""} placeholder="From Project Location" />
+            <Label>Lowest Minimum Air Temperature (°C)</Label>
+            <ReadOnlyInput value={form.lowestMinTemp ?? ""} placeholder="From Project Location" />
 
-          <Label>Lowest Minimum Air Temperature (°C):</Label>
-          <ReadOnlyInput value={form.lowestMinTemp ?? ""} placeholder="From Project Location" />
+            <Label>Coefficient of Thermal Expansion for Steel (1/°C)</Label>
+            <Input value={form.thermalCoeffSteel ?? "12.0e-6"} onChange={e => updateField("thermalCoeffSteel", e.target.value)} />
 
-          <Label>Coefficient of Thermal Expansion for Steel (1/°C):</Label>
-          <Input value={form.thermalCoeffSteel ?? "12.0e-6"} onChange={e => updateField("thermalCoeffSteel", e.target.value)} />
+            <Label>Coefficient of Thermal Expansion for RCC (1/°C)</Label>
+            <Input value={form.thermalCoeffRCC ?? "12.0e-6"} onChange={e => updateField("thermalCoeffRCC", e.target.value)} />
+          </div>
+        </SectionBox>
 
-          <Label>Coefficient of Thermal Expansion for RCC (1/°C):</Label>
-          <Input value={form.thermalCoeffRCC ?? "12.0e-6"} onChange={e => updateField("thermalCoeffRCC", e.target.value)} />
-        </div>
-      </div>
+        {/* Range of Effective Bridge Temperature */}
+        <SectionBox title="Range of Effective Bridge Temperature:">
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 220px",
+            rowGap: 12, columnGap: 30, alignItems: "center",
+          }}>
+            <Label>Minimum (°C)</Label>
+            <ReadOnlyInput value={form.bridgeTempMin ?? ""} />
 
-      {/* Range of Effective Bridge Temperature */}
-      <div style={{
-        border: "1px solid #ccc", borderRadius: 8,
-        background: "#fff", padding: "14px 18px", marginBottom: 14,
-      }}>
-        <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 10 }}>
-          Range of Effective Bridge Temperature:
-        </div>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 220px",
-          rowGap: 12, columnGap: 30, alignItems: "center",
-          maxWidth: 600,
-        }}>
-          <Label>Minimum (°C):</Label>
-          <ReadOnlyInput value={form.bridgeTempMin ?? ""} />
+            <Label>Maximum (°C)</Label>
+            <ReadOnlyInput value={form.bridgeTempMax ?? ""} />
+          </div>
+        </SectionBox>
 
-          <Label>Maximum (°C):</Label>
-          <ReadOnlyInput value={form.bridgeTempMax ?? ""} />
-        </div>
-      </div>
+        {/* Temperature for Design */}
+        <SectionBox title="Temperature for Design">
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 220px",
+            rowGap: 12, columnGap: 30, alignItems: "center",
+          }}>
+            <Label>Rise (°C)</Label>
+            <ReadOnlyInput value={form.tempRise ?? ""} />
 
-      {/* Temperature for Design */}
-      <div style={{
-        border: "1px solid #ccc", borderRadius: 8,
-        background: "#fff", padding: "14px 18px", marginBottom: 14,
-      }}>
-        <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 10 }}>
-          Temperature for Design:
-        </div>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 220px",
-          rowGap: 12, columnGap: 30, alignItems: "center",
-          maxWidth: 600,
-        }}>
-          <Label>Rise (°C):</Label>
-          <ReadOnlyInput value={form.tempRise ?? ""} />
+            <Label>Fall (°C)</Label>
+            <ReadOnlyInput value={form.tempFall ?? ""} />
+          </div>
+        </SectionBox>
+      </LeftColumn>
 
-          <Label>Fall (°C):</Label>
-          <ReadOnlyInput value={form.tempFall ?? ""} />
-        </div>
-      </div>
-    </>
+      <DescriptionBox>
+        Temperature load depends on the bridge location. Maximum and minimum temperature limits are fetched automatically.
+      </DescriptionBox>
+    </TwoColumnLayout>
   );
 }

@@ -383,8 +383,12 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       "Class SV": true,
       "Class 70R Bogie": true,
     },
+    customVehicles: {} as Record<string, any>,
+    customVehicles: {} as Record<string, any>,
     footpathMode: "Automatic",
     footpathPressure: "5.00",
+    brakingVehicles: { "Class SV": true },
+    eccentricity: "0.00",
 
     // Loading - Seismic
     seismicZone: "",
@@ -561,6 +565,9 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       // Loading
       selfWeightFactor:   String((bridgeData as any).self_weight_factor ?? "1.00"),
       liveLoadVehicles:   (bridgeData as any).live_load_vehicles ?? prev.liveLoadVehicles,
+      customVehicles:     (bridgeData as any).live_load_vehicles_custom ?? {},
+      brakingVehicles:    (bridgeData as any).braking_vehicles ?? { "Class SV": true },
+      eccentricity:       String((bridgeData as any).eccentricity ?? "0.00"),
       footpathMode:       String((bridgeData as any).footpath_mode ?? "Automatic"),
       seismicZone:        String((bridgeData as any).seismic_zone ?? ""),
       importanceFactor:   String((bridgeData as any).importance_factor ?? "1.0"),
@@ -784,6 +791,9 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
 
       // Loading - Live
       liveLoadVehicles: { "Class A": true, "Class 70R Wheeled": true, "Class 70R Tracked": true, "Class AA Wheeled": true, "Class AA Tracked": true, "Class SV": true, "Class 70R Bogie": true },
+      customVehicles: {},
+      brakingVehicles: { "Class SV": true },
+      eccentricity: "0.00",
       footpathMode: "Automatic", footpathPressure: "5.00",
 
       // Loading - Seismic
@@ -925,6 +935,9 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
       // Loading fields
       self_weight_factor:   Number(form.selfWeightFactor ?? 1),
       live_load_vehicles:   form.liveLoadVehicles ?? {},
+      live_load_vehicles_custom: form.customVehicles ?? {},
+      braking_vehicles:     form.brakingVehicles ?? {},
+      eccentricity:         Number(form.eccentricity ?? 0),
       seismic_zone:         form.seismicZone,
       importance_factor:    Number(form.importanceFactor ?? 1),
       soil_type:            form.soilType,

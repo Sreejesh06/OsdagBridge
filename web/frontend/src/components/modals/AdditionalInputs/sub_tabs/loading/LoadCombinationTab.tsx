@@ -1,4 +1,5 @@
 import React from "react";
+import { TwoColumnLayout, LeftColumn, DescriptionBox, SectionBox } from "../../SharedComponents";
 
 // IRC 6 standard load combinations
 const IRC_COMBINATIONS = [
@@ -30,65 +31,62 @@ export default function LoadCombinationTab({ form, updateField }: LoadCombinatio
   };
 
   return (
-    <>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Load Combinations:</div>
-
-      {/* IRC Load Combinations */}
-      <div style={{
-        border: "1px solid #ccc", borderRadius: 8,
-        background: "#fff", padding: "14px 18px", marginBottom: 14,
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <div style={{ fontWeight: 600, fontSize: 12 }}>Load Combinations from IRC 6:</div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={() => toggleAll(true)}
-              style={{
-                padding: "3px 10px", fontSize: 11, cursor: "pointer",
-                background: "#efefef", border: "1px solid #888", borderRadius: 4,
-              }}
-            >Select All</button>
-            <button
-              onClick={() => toggleAll(false)}
-              style={{
-                padding: "3px 10px", fontSize: 11, cursor: "pointer",
-                background: "#efefef", border: "1px solid #888", borderRadius: 4,
-              }}
-            >Clear All</button>
+    <TwoColumnLayout>
+      <LeftColumn>
+        {/* IRC Load Combinations */}
+        <SectionBox>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontWeight: 600, fontSize: 12 }}>Load Combinations from IRC 6</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => toggleAll(true)}
+                style={{
+                  padding: "3px 10px", fontSize: 11, cursor: "pointer",
+                  background: "#efefef", border: "1px solid #888", borderRadius: 4,
+                }}
+              >Select All</button>
+              <button
+                onClick={() => toggleAll(false)}
+                style={{
+                  padding: "3px 10px", fontSize: 11, cursor: "pointer",
+                  background: "#efefef", border: "1px solid #888", borderRadius: 4,
+                }}
+              >Clear All</button>
+            </div>
           </div>
-        </div>
 
-        <div style={{ display: "grid", rowGap: 8 }}>
-          {IRC_COMBINATIONS.map(combo => (
-            <label
-              key={combo}
-              style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
-            >
-              <input
-                type="checkbox"
-                checked={selectedCombos[combo] ?? false}
-                onChange={e => toggle(combo, e.target.checked)}
-                style={{ width: 15, height: 15 }}
-              />
-              <span style={{ fontSize: 12, color: "#333" }}>{combo}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+          <div style={{ display: "grid", rowGap: 8 }}>
+            {IRC_COMBINATIONS.map(combo => (
+              <label
+                key={combo}
+                style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedCombos[combo] ?? false}
+                  onChange={e => toggle(combo, e.target.checked)}
+                  style={{ width: 15, height: 15 }}
+                />
+                <span style={{ fontSize: 12, color: "#333" }}>{combo}</span>
+              </label>
+            ))}
+          </div>
+        </SectionBox>
 
-      {/* Custom Load Combinations */}
-      <div style={{
-        border: "1px solid #ccc", borderRadius: 8,
-        background: "#fff", padding: "14px 18px",
-      }}>
-        <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8 }}>Custom Load Combination:</div>
-        <div style={{
-          padding: 10, background: "#f9f9f9",
-          borderRadius: 6, fontSize: 12, color: "#666", fontStyle: "italic",
-        }}>
-          Custom load combinations can be defined after custom loads have been added in the Custom Load tab.
-        </div>
-      </div>
-    </>
+        {/* Custom Load Combinations */}
+        <SectionBox title="Custom Load Combination">
+          <div style={{
+            padding: 10, background: "#f9f9f9",
+            borderRadius: 6, fontSize: 12, color: "#666", fontStyle: "italic",
+          }}>
+            Custom load combinations can be defined after custom loads have been added in the Custom Load tab.
+          </div>
+        </SectionBox>
+      </LeftColumn>
+
+      <DescriptionBox>
+        {"\n"}
+      </DescriptionBox>
+    </TwoColumnLayout>
   );
 }
