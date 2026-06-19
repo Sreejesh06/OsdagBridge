@@ -67,7 +67,7 @@ export default function WindLoadTab({ form, updateField }: WindLoadTabProps) {
             rowGap: 12, columnGap: 30, alignItems: "center",
           }}>
             <Label>Basic Wind Speed, V<sub>b</sub> (m/s)</Label>
-            <Input value={form.basicWindSpeed ?? ""} readOnly placeholder="From Project Location" />
+            <Input value={form.basicWindSpeed ?? ""} readOnly />
 
             <Label>Average Exposed Height, H (m)</Label>
             <Input value={form.avgExposedHeight ?? "10"} onChange={e => updateField("avgExposedHeight", e.target.value)} />
