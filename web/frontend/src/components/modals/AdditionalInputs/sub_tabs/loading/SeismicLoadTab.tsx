@@ -69,10 +69,10 @@ export default function SeismicLoadTab({ form, updateField }: SeismicLoadTabProp
             rowGap: 12, columnGap: 30, alignItems: "center",
           }}>
             <Label>Seismic Zone</Label>
-            <Input value={form.seismicZone ?? ""} onChange={e => updateField("seismicZone", e.target.value)} />
+            <Input value={form.seismicZone ?? ""} readOnly disabled onChange={e => updateField("seismicZone", e.target.value)} />
 
             <Label>Importance Factor, I</Label>
-            <Input value={form.importanceFactor ?? "1.00"} onChange={e => updateField("importanceFactor", e.target.value)} />
+            <Input value={form.importanceFactor ?? "1.0"} onChange={e => updateField("importanceFactor", e.target.value)} />
 
             <Label>Type of Soil</Label>
             <Select value={form.soilType ?? SOIL_TYPES[0]} onChange={e => updateField("soilType", e.target.value)} options={SOIL_TYPES} />
@@ -81,7 +81,7 @@ export default function SeismicLoadTab({ form, updateField }: SeismicLoadTabProp
             <Input value={form.timePeriod ?? ""} onChange={e => updateField("timePeriod", e.target.value)} />
 
             <Label>Damping Percentage</Label>
-            <Input value={form.damping ?? "2.00"} onChange={e => updateField("damping", e.target.value)} />
+            <Input value={form.damping ?? "2"} onChange={e => updateField("damping", e.target.value)} />
 
             <Label>Response Reduction Factor, R</Label>
             <Select value={form.responseFactor ?? "1"} onChange={e => updateField("responseFactor", e.target.value)} options={RESPONSE_FACTORS} />
