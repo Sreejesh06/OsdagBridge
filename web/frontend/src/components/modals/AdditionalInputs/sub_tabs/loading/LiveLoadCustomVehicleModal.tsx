@@ -116,12 +116,15 @@ export default function LiveLoadCustomVehicleModal({ onSave, onCancel, initialDa
       }}>
         {/* Header */}
         <div style={{
-          background: "#8cc63f", color: "#fff", padding: "8px 16px",
+          background: "#fff", borderBottom: "1px solid #ccc", padding: "8px 16px",
           fontWeight: 600, fontSize: 13, display: "flex", justifyContent: "space-between",
-          alignItems: "center"
+          alignItems: "center", color: "#333"
         }}>
-          <div>Live Load Custom Vehicle Add/Edit</div>
-          <div style={{ cursor: "pointer", fontWeight: "bold" }} onClick={onCancel}>×</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <img src="/Osdag_logo.svg" alt="Osdag Logo" style={{ width: 16, height: 16 }} />
+            Live Load Custom Vehicle Add/Edit
+          </div>
+          <div style={{ cursor: "pointer", fontWeight: "bold", color: "#666" }} onClick={onCancel}>×</div>
         </div>
 
         {/* Content */}
@@ -144,9 +147,9 @@ export default function LiveLoadCustomVehicleModal({ onSave, onCancel, initialDa
           {type === "Wheeled" ? (
             <>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <Label>Load, P# (kN)</Label>
+                <Label>Load, P<sub>#</sub> (kN)</Label>
                 <div style={{ width: 80 }}><Input value={loadInput} onChange={e => setLoadInput(e.target.value)} /></div>
-                <Label>Spacing, D# (m)</Label>
+                <Label>Spacing, D<sub>#</sub> (m)</Label>
                 <div style={{ width: 80 }}><Input value={spacingInput} onChange={e => setSpacingInput(e.target.value)} /></div>
                 
                 <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
@@ -196,11 +199,11 @@ export default function LiveLoadCustomVehicleModal({ onSave, onCancel, initialDa
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, height: 160, alignItems: "center" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "center" }}>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 60 }}><Label>{isBogie ? "Pb (kN)" : "P (kN)"}</Label></div>
+                  <div style={{ width: 60 }}><Label>{isBogie ? <>P<sub>b</sub> (kN)</> : <>P (kN)</>}</Label></div>
                   <div style={{ width: 80 }}><Input value={loadInput} onChange={e => setLoadInput(e.target.value)} /></div>
                 </div>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 60 }}><Label>{isBogie ? "Db (m)" : "D (m)"}</Label></div>
+                  <div style={{ width: 60 }}><Label>{isBogie ? <>D<sub>b</sub> (m)</> : <>D (m)</>}</Label></div>
                   <div style={{ width: 80 }}><Input value={spacingInput} onChange={e => setSpacingInput(e.target.value)} /></div>
                 </div>
               </div>

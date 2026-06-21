@@ -434,6 +434,10 @@ function SectionPreviewBox({ title, sectionType, designation, visible }: { title
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
+const NormalLabel = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ fontSize: 12, color: "#2f2f2f" }}>{children}</div>
+);
+
 export default function CrossBracingDetailsTab({
   memberProps,
   updateBracingField,
@@ -508,13 +512,13 @@ export default function CrossBracingDetailsTab({
         {/* Selection Box */}
         <div style={{ background: "#fff", border: "1px solid #cfcfcf", borderRadius: 8, padding: "10px 14px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", rowGap: 8, columnGap: 14, alignItems: "center" }}>
-            <Label>Select Girders:</Label>
+            <NormalLabel>Select Girders:</NormalLabel>
             <Select
               value={selectedPair}
               onChange={(e) => handlePairChange(e.target.value)}
               options={pairs}
             />
-            <Label>Member ID:</Label>
+            <NormalLabel>Member ID:</NormalLabel>
             <Input value={memberIdDisplay} onChange={() => {}} readOnly />
           </div>
         </div>
@@ -526,7 +530,7 @@ export default function CrossBracingDetailsTab({
           <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", rowGap: 8, columnGap: 14, alignItems: "center" }}>
             
             {/* Design dropdown */}
-            <Label>Design:</Label>
+            <NormalLabel>Design:</NormalLabel>
             <Select
               value={designMode}
               onChange={(e) => setDesignMode(e.target.value as "Optimized" | "Custom")}
@@ -534,7 +538,7 @@ export default function CrossBracingDetailsTab({
             />
 
             {/* Type of Bracing */}
-            <Label>Type of Bracing:</Label>
+            <NormalLabel>Type of Bracing:</NormalLabel>
             <Select
               value={brace.bracing_type || "K-Bracing"}
               onChange={(e) => handleBracingTypeChange(e.target.value)}
@@ -611,7 +615,7 @@ export default function CrossBracingDetailsTab({
             />
 
             {/* Spacing */}
-            <Label>Spacing (m):</Label>
+            <NormalLabel>Spacing (m):</NormalLabel>
             <Input
               value={String(brace.spacing || "3")}
               onChange={(e) => updateBracingField(selectedPair, "spacing", e.target.value)}

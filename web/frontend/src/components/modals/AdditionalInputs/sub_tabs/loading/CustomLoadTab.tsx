@@ -140,15 +140,15 @@ export default function CustomLoadTab({ form, updateField }: CustomLoadTabProps)
         {/* Bridge Geometry Diagram Placeholder */}
         <div style={{
           minHeight: 130,
-          backgroundColor: "#e2e8f0",
-          border: "1px solid #cbd5e1",
+          backgroundColor: "#e5e5e5",
+          border: "1px solid #ccc",
           borderRadius: 4,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           marginBottom: 16
         }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#334155", textAlign: "center" }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#333", textAlign: "center" }}>
             Bridge Geometry<br/>Diagram
           </span>
         </div>
@@ -175,8 +175,8 @@ export default function CustomLoadTab({ form, updateField }: CustomLoadTabProps)
                   disabled={loadCase !== "Custom"}
                   style={{
                     flex: 1,
-                    height: 28, borderRadius: 5, border: "1px solid #cbd5e1",
-                    padding: "0 8px", fontSize: 12, background: loadCase === "Custom" ? "#fff" : "#f1f5f9",
+                    height: 28, borderRadius: 5, border: "1px solid #ccc",
+                    padding: "0 8px", fontSize: 12, background: loadCase === "Custom" ? "#fff" : "#e5e5e5",
                   }}
                 />
               </div>

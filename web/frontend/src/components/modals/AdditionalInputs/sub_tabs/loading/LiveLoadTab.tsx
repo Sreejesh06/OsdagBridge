@@ -175,7 +175,7 @@ export default function LiveLoadTab({ form, updateField }: LiveLoadTabProps) {
             display: "grid", gridTemplateColumns: "1fr 140px 100px",
             rowGap: 10, columnGap: 16, alignItems: "center",
           }}>
-            <Label>Footpath Pressure (kN/mm²)</Label>
+            <Label>Footpath Pressure (kN/m<sup>2</sup>)</Label>
             <Select
               value={footpathMode}
               onChange={e => updateField("footpathMode", e.target.value)}

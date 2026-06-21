@@ -65,8 +65,6 @@ export default function DesignOptionsContTab({ form, updateField }: DesignOption
 
   return (
     <>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Design Options (Cont.):</div>
-
       {/* Partial Factors */}
       <SectionCard title="Partial Factor">
         <div style={{
@@ -92,7 +90,7 @@ export default function DesignOptionsContTab({ form, updateField }: DesignOption
           display: "grid",
           gridTemplateColumns: "1fr 150px",
           rowGap: 12, columnGap: 30, alignItems: "center",
-          maxWidth: 500,
+          maxWidth: 580,
         }}>
           <Label>Number of Load Cycles:</Label>
           <Input
@@ -104,19 +102,27 @@ export default function DesignOptionsContTab({ form, updateField }: DesignOption
 
       {/* Deflection Control */}
       <SectionCard title="Deflection Control">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 150px",
+          rowGap: 12, columnGap: 30, alignItems: "center",
+          maxWidth: 580,
+        }}>
           <Label>Limit:</Label>
-          <span style={{ fontSize: 12, fontWeight: 600 }}>L /</span>
-          <input
-            type="text"
-            value={form.deflectionLimit ?? "600.00"}
-            onChange={e => updateField("deflectionLimit", e.target.value)}
-            style={{
-              width: 100, height: 28, borderRadius: 5, border: "1px solid #000",
-              padding: "0 8px", fontSize: 12, background: "#fff",
-            }}
-          />
-          <span style={{ fontSize: 12, fontWeight: 600 }}>m</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 600 }}>L /</span>
+            <input
+              type="text"
+              value={form.deflectionLimit ?? "600.00"}
+              onChange={e => updateField("deflectionLimit", e.target.value)}
+              style={{
+                flex: 1, height: 28, borderRadius: 5, border: "1px solid #000",
+                padding: "0 8px", fontSize: 12, background: "#fff",
+                minWidth: 0
+              }}
+            />
+            <span style={{ fontSize: 12, fontWeight: 600 }}>m</span>
+          </div>
         </div>
       </SectionCard>
 

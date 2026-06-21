@@ -627,7 +627,7 @@ export default function GirderDetailsTab({
         <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", rowGap: 10, columnGap: 16, alignItems: "center" }}>
           {items.map((item, idx) => (
             <Fragment key={idx}>
-              <div style={{ fontSize: 10, color: "#5a5a5a" }}>{item.label}</div>
+              <div style={{ fontSize: 11, color: "#2f2f2f", fontWeight: 600 }}>{item.label}</div>
               <Input value={item.value} disabled={false} readOnly />
             </Fragment>
           ))}
@@ -1125,7 +1125,7 @@ export default function GirderDetailsTab({
                 />
               )}
 
-              <Label>Width of Top Flange, t<sub>fw</sub> (mm):</Label>
+              <Label>Width of Top Flange, b<sub>ft</sub> (mm):</Label>
               {isOptimized ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
@@ -1193,7 +1193,7 @@ export default function GirderDetailsTab({
                 />
               )}
 
-              <Label>Width of Bottom Flange, b<sub>fw</sub> (mm):</Label>
+              <Label>Width of Bottom Flange, b<sub>fb</sub> (mm):</Label>
               {isOptimized ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
@@ -1229,7 +1229,7 @@ export default function GirderDetailsTab({
                 />
               )}
 
-              <Label>Bottom Flange Thickness, b<sub>ft</sub> (mm):</Label>
+              <Label>Bottom Flange Thickness, t<sub>fb</sub> (mm):</Label>
               {isOptimized ? (
                 <Select
                   value={((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")

@@ -469,6 +469,13 @@ function BracingLayoutSvg({ bracingType, topChord, bottomChord, memberLabel, pai
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
+const THEME_CANVAS = "#f8f8f8";
+const THEME_GIRDER = "#d9d9d9";
+
+const NormalLabel = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ fontSize: 12, color: "#2f2f2f" }}>{children}</div>
+);
+
 export default function EndDiaphragmDetailsTab({
   memberProps,
   updateEndDiaphragmField,
@@ -1073,13 +1080,13 @@ export default function EndDiaphragmDetailsTab({
         {/* Selection Box */}
         <div style={{ background: "#fff", border: "1px solid #cfcfcf", borderRadius: 8, padding: "10px 14px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", rowGap: 8, columnGap: 14, alignItems: "center" }}>
-            <Label>Select Girders:</Label>
+            <NormalLabel>Select Girders:</NormalLabel>
             <Select
               value={selectedPair}
               onChange={(e) => setSelectedPair(e.target.value)}
               options={pairs}
             />
-            <Label>Member ID:</Label>
+            <NormalLabel>Member ID:</NormalLabel>
             <Input value={`${activeMemberId} / E${pairIdx}M2`} onChange={() => {}} readOnly disabled />
           </div>
         </div>
@@ -1089,7 +1096,7 @@ export default function EndDiaphragmDetailsTab({
           <div style={{ fontSize: 12, fontWeight: 700, color: "#4b4b4b", marginBottom: 10 }}>Section Inputs:</div>
 
           <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", rowGap: 8, columnGap: 14, alignItems: "center" }}>
-            <Label>Type:</Label>
+            <NormalLabel>Type:</NormalLabel>
             <Select
               value={activeType}
               onChange={e => handleTypeChange(e.target.value)}
@@ -1099,7 +1106,7 @@ export default function EndDiaphragmDetailsTab({
             {/* Cross Bracing inputs */}
             {isCross && (
               <>
-                <Label>Type of Bracing:</Label>
+                <NormalLabel>Type of Bracing:</NormalLabel>
                 <Select
                   value={viewState.bracing_type || "K-Bracing"}
                   onChange={(e) => handleBracingTypeChange(e.target.value)}
@@ -1123,7 +1130,7 @@ export default function EndDiaphragmDetailsTab({
                   disabled={!isCustom}
                 />
 
-                <div style={{ height: 1, background: "#ddd", gridColumn: "span 2", margin: "4px 0" }} />
+
 
                 <Label>Top Chord:</Label>
                 <input
@@ -1150,7 +1157,7 @@ export default function EndDiaphragmDetailsTab({
                   disabled={!isCustom || !viewState.top_chord_enabled}
                 />
 
-                <div style={{ height: 1, background: "#ddd", gridColumn: "span 2", margin: "4px 0" }} />
+
 
                 <Label>Bottom Chord:</Label>
                 <input
@@ -1195,7 +1202,7 @@ export default function EndDiaphragmDetailsTab({
             {/* Welded Beam inputs */}
             {isWelded && (
               <>
-                <Label>Symmetry:</Label>
+                <NormalLabel>Symmetry:</NormalLabel>
                 <Select
                   value={symmetry}
                   onChange={e => handleSymmetryChange(e.target.value)}
@@ -1229,7 +1236,7 @@ export default function EndDiaphragmDetailsTab({
                   />
                 )}
 
-                <Label>Web Thickness, w<sub>t</sub> (mm):</Label>
+                <Label>Web Thickness, t<sub>w</sub> (mm):</Label>
                 {!isCustom ? (
                   <Select
                     value={web_thickness_mode}
@@ -1250,7 +1257,7 @@ export default function EndDiaphragmDetailsTab({
                   />
                 )}
 
-                <Label>Width of Top Flange, t<sub>fw</sub> (mm):</Label>
+                <Label>Width of Top Flange, b<sub>ft</sub> (mm):</Label>
                 {!isCustom ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <button
@@ -1297,7 +1304,7 @@ export default function EndDiaphragmDetailsTab({
                   />
                 )}
 
-                <Label>Width of Bottom Flange, b<sub>fw</sub> (mm):</Label>
+                <Label>Width of Bottom Flange, b<sub>fb</sub> (mm):</Label>
                 {!isCustom ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <button
@@ -1325,7 +1332,7 @@ export default function EndDiaphragmDetailsTab({
                   />
                 )}
 
-                <Label>Bottom Flange Thickness, b<sub>ft</sub> (mm):</Label>
+                <Label>Bottom Flange Thickness, t<sub>fb</sub> (mm):</Label>
                 {!isCustom ? (
                   <Select
                     value={symmetry === "Girder Symmetric" ? top_thickness_mode : bottom_thickness_mode}

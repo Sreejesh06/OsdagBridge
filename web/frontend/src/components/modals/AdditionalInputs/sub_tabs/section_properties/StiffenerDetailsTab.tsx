@@ -108,6 +108,10 @@ function computeOutstand(mId: string, girderDetails: any): string | null {
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
+const NormalLabel = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ fontSize: 12, color: "#2f2f2f" }}>{children}</div>
+);
+
 export default function StiffenerDetailsTab({
   memberProps,
   setMemberProps,
@@ -367,19 +371,19 @@ export default function StiffenerDetailsTab({
                         // Left end (only for first segment)
                         const resolvedLeft = isFirst
                           ? resolveBearingParams(
-                              memberProps.stiffener_details?.[segmentRects[0].id] || {},
-                              (segmentRects[0].length || 0) * 1000,
-                              pxPerMm
-                            )
+                            memberProps.stiffener_details?.[segmentRects[0].id] || {},
+                            (segmentRects[0].length || 0) * 1000,
+                            pxPerMm
+                          )
                           : null;
 
                         // Right end (only for last segment)
                         const resolvedRight = isLast
                           ? resolveBearingParams(
-                              memberProps.stiffener_details?.[segmentRects[segmentRects.length - 1].id] || {},
-                              (segmentRects[segmentRects.length - 1].length || 0) * 1000,
-                              pxPerMm
-                            )
+                            memberProps.stiffener_details?.[segmentRects[segmentRects.length - 1].id] || {},
+                            (segmentRects[segmentRects.length - 1].length || 0) * 1000,
+                            pxPerMm
+                          )
                           : null;
 
                         const leftZone = resolvedLeft?.bearingZone ?? 0;
@@ -609,7 +613,7 @@ export default function StiffenerDetailsTab({
             {isExterior && (
               <>
                 {/* No. of Bearing Stiffeners */}
-                <Label>No. of Bearing Stiffeners<br />(on one side only):</Label>
+                <NormalLabel>No. of Bearing Stiffeners<br />(on one side only):</NormalLabel>
                 <Select
                   value={stiff.bearing_stiffeners_each_end ?? ""}
                   onChange={(e) => updateStiffenerField(selectedStiffenerMember, "bearing_stiffeners_each_end", e.target.value)}
@@ -618,7 +622,7 @@ export default function StiffenerDetailsTab({
                 />
 
                 {/* Bearing Spacing */}
-                <Label>Bearing Stiffener Spacing (mm):</Label>
+                <NormalLabel>Bearing Stiffener Spacing (mm):</NormalLabel>
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <Input
                     value={stiff.bearing_spacing_mm ?? ""}
@@ -626,13 +630,10 @@ export default function StiffenerDetailsTab({
                     placeholder={isOptimized ? "" : `Auto (${autoBearingSpacingMm} mm)`}
                     disabled={isOptimized}
                   />
-                  <span style={{ fontSize: 9, color: "#888" }}>
-                    Leave empty for automatic spacing (Min: {MIN_BEARING_SPACING_MM} mm)
-                  </span>
                 </div>
 
                 {/* Bearing Thickness */}
-                <Label>Bearing Stiffener Thickness (mm):</Label>
+                <NormalLabel>Bearing Stiffener Thickness (mm):</NormalLabel>
                 {renderModeValueSelect(
                   "bearing_thickness",
                   "bearing_thickness_value",
@@ -642,7 +643,7 @@ export default function StiffenerDetailsTab({
                 )}
 
                 {/* Bearing Outstand */}
-                <Label>Outstand of Bearing Stiffener (mm):</Label>
+                <NormalLabel>Outstand of Bearing Stiffener (mm):</NormalLabel>
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <Input
                     value={stiff.bearing_outstand_mm ?? ""}
@@ -667,7 +668,7 @@ export default function StiffenerDetailsTab({
             )}
 
             {/* ── Intermediate Stiffener rows ── */}
-            <Label>Intermediate Stiffener:</Label>
+            <NormalLabel>Intermediate Stiffener:</NormalLabel>
             <Select
               value={stiff.intermediate_stiffener ?? ""}
               onChange={handleIntermediateChange}
@@ -675,7 +676,7 @@ export default function StiffenerDetailsTab({
               disabled={isOptimized}
             />
 
-            <Label>Intermediate Stiffener Spacing:</Label>
+            <NormalLabel>Intermediate Stiffener Spacing:</NormalLabel>
             <Input
               value={stiff.intermediate_spacing_mm ?? ""}
               onChange={(e) => updateStiffenerField(selectedStiffenerMember, "intermediate_spacing_mm", e.target.value)}
@@ -683,7 +684,7 @@ export default function StiffenerDetailsTab({
               disabled={isOptimized || String(stiff.intermediate_stiffener ?? "") !== "Yes"}
             />
 
-            <Label>Intermediate Stiffener Thickness (mm):</Label>
+            <NormalLabel>Intermediate Stiffener Thickness (mm):</NormalLabel>
             {renderModeValueSelect(
               "intermediate_thickness",
               "intermediate_thickness_value",
@@ -692,7 +693,7 @@ export default function StiffenerDetailsTab({
               String(stiff.intermediate_stiffener ?? "") === "Yes"
             )}
 
-            <Label>Outstand of Intermediate Stiffener (mm):</Label>
+            <NormalLabel>Outstand of Intermediate Stiffener (mm):</NormalLabel>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Input
                 value={stiff.intermediate_outstand_mm ?? ""}
@@ -715,7 +716,7 @@ export default function StiffenerDetailsTab({
             <div style={{ height: 1, background: "#eee", gridColumn: "span 2", margin: "2px 0" }} />
 
             {/* ── Longitudinal Stiffener rows ── */}
-            <Label>Longitudinal Stiffener:</Label>
+            <NormalLabel>Longitudinal Stiffener:</NormalLabel>
             <Select
               value={stiff.longitudinal_stiffener ?? ""}
               onChange={handleLongitudinalChange}
@@ -723,7 +724,7 @@ export default function StiffenerDetailsTab({
               disabled={isOptimized}
             />
 
-            <Label>Longitudinal Stiffener Thickness (mm):</Label>
+            <NormalLabel>Longitudinal Stiffener Thickness (mm):</NormalLabel>
             {renderModeValueSelect(
               "longitudinal_thickness",
               "longitudinal_thickness_value",
@@ -738,7 +739,7 @@ export default function StiffenerDetailsTab({
             Web Buckling Details
           </span>
           <div style={{ display: "grid", gridTemplateColumns: "245px 1fr", columnGap: 14, alignItems: "center" }}>
-            <Label>Shear Buckling Design Method:</Label>
+            <NormalLabel>Shear Buckling Design Method:</NormalLabel>
             <Select
               value={stiff.shear_buckling_method ?? ""}
               onChange={(e) => updateStiffenerField(selectedStiffenerMember, "shear_buckling_method", e.target.value)}
