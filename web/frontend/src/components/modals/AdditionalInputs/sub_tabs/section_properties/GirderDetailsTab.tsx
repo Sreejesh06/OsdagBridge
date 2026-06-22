@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { useBridgeStore, API } from "../../../../../store/bridgeStore";
 import { Label, Input, Select } from "../../SharedComponents";
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 import { SAIL_APPROVED_THICKNESS_VALUES, ROLLED_IS_SECTIONS, ROLLED_PROPERTIES } from "../../../../constants/memberConstants";
 
 function parseSingleThicknessValue(valStr: any, fallback: number): number {
@@ -115,6 +116,14 @@ export default function GirderDetailsTab({
 }: GirderDetailsTabProps) {
   const designMode = useBridgeStore(state => state.designMode);
   const isOptimized = designMode === "Optimized";
+
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("girder_details").then((data) => setSchema(data));
+    });
+  }, []);
 
   const [selectedGirder, setSelectedGirder] = useState<string>("G1");
   const [selectedSegmentIndex, setSelectedSegmentIndex] = useState<number>(0);
@@ -1051,306 +1060,147 @@ export default function GirderDetailsTab({
           Section Inputs:
         </span>
 
-        <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", rowGap: 10, columnGap: 14, alignItems: "center" }}>
-          <Label>Member ID:</Label>
-          <Select
-            value={`${selectedGirder}M${safeSegmentIndex + 1}`}
-            onChange={e => {
-              const mId = e.target.value;
-              const match = mId.match(/M(\d+)$/);
-              if (match) {
-                setSelectedSegmentIndex(Number(match[1]) - 1);
+        {schema ? (
+          <DynamicSchemaRenderer
+            fields={schema.section_inputs || []}
+            data={{
+              ...girderDetails,
+              ...currentSegment,
+              type_combo: girderDetails.type || "Welded",
+              symmetry_combo: currentSegment.symmetry || "Girder Symmetric",
+              total_depth_input: currentSegment.depth ?? currentSegment.total_depth_mm ?? "",
+              top_width_input: currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? "",
+              bottom_width_input: ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") 
+                ? (currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? "")
+                : (currentSegment.bottom_flange_width ?? currentSegment.bottom_flange_width_mm ?? ""),
+              top_thickness_combo: currentSegment.top_flange_thickness_mode ?? currentSegment.top_thickness_mode ?? "All",
+              bottom_thickness_combo: ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
+                ? (currentSegment.top_flange_thickness_mode ?? currentSegment.top_thickness_mode ?? "All")
+                : (currentSegment.bottom_flange_thickness_mode ?? currentSegment.bottom_thickness_mode ?? "All"),
+              top_thickness_value_input: currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "20",
+              bottom_thickness_value_input: ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
+                ? (currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "20")
+                : (currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm ?? "20"),
+              support_type_combo: girderDetails.support_type || currentSegment.support_type || "Major Laterally Supported",
+              support_width_input: girderDetails.support_width ?? girderDetails.support_width_mm ?? currentSegment.support_width ?? currentSegment.support_width_mm ?? "500",
+              web_thickness_combo: currentSegment.web_thickness_mode ?? "All",
+              web_thickness_value_input: currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? "12",
+              web_type_combo: girderDetails.web_type || currentSegment.web_type || "Thick Web without ITS",
+              is_section_combo: currentSegment.is_section || "MB 500",
+              torsion_combo: girderDetails.torsional_restraint || "Fully Restrained",
+              warping_combo: girderDetails.warping_restraint || "Both Flanges Restrained",
+            }}
+            onChange={(fieldId, value) => {
+              // Legacy Payload Field Bindings
+              if (fieldId === "total_depth_input") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "depth", value);
+                updateGirderField(selectedGirder, safeSegmentIndex, "total_depth_mm", value);
+              } else if (fieldId === "top_width_input") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width", value);
+                updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width_mm", value);
+                if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width", value);
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width_mm", value);
+                }
+              } else if (fieldId === "bottom_width_input") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width", value);
+                updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width_mm", value);
+                if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
+                  updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width", value);
+                  updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width_mm", value);
+                }
+              } else if (fieldId === "top_thickness_value_input") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_value", value);
+                updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_value_mm", value);
+                if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", value);
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", value);
+                }
+              } else if (fieldId === "bottom_thickness_value_input") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", value);
+                updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", value);
+                if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
+                  updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_value", value);
+                  updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_value_mm", value);
+                }
+              } else if (fieldId === "web_thickness_value_input") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_value", value);
+                updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_value_mm", value);
+              } else if (fieldId === "support_width_input") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "support_width", value);
+                updateGirderField(selectedGirder, safeSegmentIndex, "support_width_mm", value);
+              } else if (fieldId === "type_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "type", value);
+              } else if (fieldId === "symmetry_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "symmetry", value);
+                if (value === "Girder Symmetric") {
+                  const topW = currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? "";
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width", topW);
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width_mm", topW);
+                  
+                  const topThick = currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "20";
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", topThick);
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", topThick);
+                }
+              } else if (fieldId === "is_section_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "is_section", value);
+              } else if (fieldId === "torsion_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "torsional_restraint", value);
+              } else if (fieldId === "warping_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "warping_restraint", value);
+              } else if (fieldId === "web_type_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "web_type", value);
+              } else if (fieldId === "support_type_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "support_type", value);
+              } else if (fieldId === "top_thickness_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_mode", value);
+                updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_mode", value);
+                if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_mode", value);
+                  updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_mode", value);
+                }
+                if (value === "Custom") {
+                  handleOpenThicknessDialog("top_flange_thickness_value", currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "");
+                }
+              } else if (fieldId === "bottom_thickness_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_mode", value);
+                updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_mode", value);
+                if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
+                  updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_mode", value);
+                  updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_mode", value);
+                }
+                if (value === "Custom") {
+                  handleOpenThicknessDialog("bottom_flange_thickness_value", currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm ?? "");
+                }
+              } else if (fieldId === "web_thickness_combo") {
+                updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_mode", value);
+                if (value === "Custom") {
+                  handleOpenThicknessDialog("web_thickness_value", currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? "");
+                }
+              } else if (fieldId === "total_depth_input_bounds_click") {
+                handleOpenBoundsDialog("total_depth");
+              } else if (fieldId === "top_width_input_bounds_click") {
+                handleOpenBoundsDialog("top_flange_width");
+              } else if (fieldId === "bottom_width_input_bounds_click") {
+                handleOpenBoundsDialog("bottom_flange_width");
               }
             }}
-            options={segments.map((s: any) => s.id)}
+            isOptimizedMode={isOptimized}
+            fieldDisabled={{
+              type: isOptimized,
+              symmetry: isOptimized,
+              web_type: isOptimized,
+              is_section: isOptimized,
+            }}
           />
-
-          <Label>Type:</Label>
-          <Select
-            value={girderDetails.type || "Welded"}
-            onChange={e => updateGirderField(selectedGirder, safeSegmentIndex, "type", e.target.value)}
-            options={["Welded", "Rolled"]}
-            disabled={isOptimized}
-          />
-
-          {/* Welded Fields */}
-          {girderDetails.type !== "Rolled" && (
-            <>
-              <Label>Symmetry:</Label>
-              <Select
-                value={currentSegment.symmetry || "Girder Symmetric"}
-                onChange={e => {
-                  const newSym = e.target.value;
-                  updateGirderField(selectedGirder, safeSegmentIndex, "symmetry", newSym);
-                  if (newSym === "Girder Symmetric") {
-                    const topW = currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? "";
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width", topW);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width_mm", topW);
-                    
-                    const topThick = currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "";
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", topThick);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", topThick);
-                  }
-                }}
-                options={["Girder Symmetric", "Girder Unsymmetric"]}
-                disabled={isOptimized}
-              />
-
-              <Label>Total Depth, d (mm):</Label>
-              {isOptimized ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenBoundsDialog("total_depth")}
-                    style={{
-                      padding: "4px 10px",
-                      background: "#90AF13",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 12
-                    }}
-                  >
-                    Set Bounds
-                  </button>
-                </div>
-              ) : (
-                <Input
-                  value={currentSegment.depth ?? currentSegment.total_depth_mm ?? ""}
-                  onChange={e => {
-                    updateGirderField(selectedGirder, safeSegmentIndex, "depth", e.target.value);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "total_depth_mm", e.target.value);
-                  }}
-                />
-              )}
-
-              <Label>Width of Top Flange, b<sub>ft</sub> (mm):</Label>
-              {isOptimized ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenBoundsDialog("top_flange_width")}
-                    style={{
-                      padding: "4px 10px",
-                      background: "#90AF13",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 12
-                    }}
-                  >
-                    Set Bounds
-                  </button>
-                </div>
-              ) : (
-                <Input
-                  value={currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? ""}
-                  onChange={e => {
-                    const val = e.target.value;
-                    updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width", val);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width_mm", val);
-                    if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width", val);
-                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width_mm", val);
-                    }
-                  }}
-                />
-              )}
-
-              <Label>Top Flange Thickness, t<sub>ft</sub> (mm):</Label>
-              {isOptimized ? (
-                <Select
-                  value={currentSegment.top_flange_thickness_mode ?? currentSegment.top_thickness_mode ?? "All"}
-                  onChange={e => {
-                    const val = e.target.value;
-                    updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_mode", val);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_mode", val);
-                    if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_mode", val);
-                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_mode", val);
-                    }
-                    if (val === "Custom") {
-                      handleOpenThicknessDialog("top_flange_thickness_value", currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "");
-                    }
-                  }}
-                  options={["All", "Custom"]}
-                />
-              ) : (
-                <Select
-                  value={currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "20"}
-                  onChange={e => {
-                    const val = e.target.value;
-                    updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_value", val);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_value_mm", val);
-                    if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", val);
-                      updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", val);
-                    }
-                  }}
-                  options={SAIL_APPROVED_THICKNESS_VALUES}
-                />
-              )}
-
-              <Label>Width of Bottom Flange, b<sub>fb</sub> (mm):</Label>
-              {isOptimized ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenBoundsDialog("bottom_flange_width")}
-                    style={{
-                      padding: "4px 10px",
-                      background: "#90AF13",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 12
-                    }}
-                  >
-                    Set Bounds
-                  </button>
-                </div>
-              ) : (
-                <Input
-                  value={((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
-                    ? (currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? "")
-                    : (currentSegment.bottom_flange_width ?? currentSegment.bottom_flange_width_mm ?? "")}
-                  onChange={e => {
-                    const val = e.target.value;
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width", val);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width_mm", val);
-                    if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                      updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width", val);
-                      updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width_mm", val);
-                    }
-                  }}
-                />
-              )}
-
-              <Label>Bottom Flange Thickness, t<sub>fb</sub> (mm):</Label>
-              {isOptimized ? (
-                <Select
-                  value={((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
-                    ? (currentSegment.top_flange_thickness_mode ?? currentSegment.top_thickness_mode ?? "All")
-                    : (currentSegment.bottom_flange_thickness_mode ?? currentSegment.bottom_thickness_mode ?? "All")}
-                  onChange={e => {
-                    const val = e.target.value;
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_mode", val);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_mode", val);
-                    if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                      updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_mode", val);
-                      updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_mode", val);
-                    }
-                    if (val === "Custom") {
-                      handleOpenThicknessDialog("bottom_flange_thickness_value", currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm ?? "");
-                    }
-                  }}
-                  options={["All", "Custom"]}
-                />
-              ) : (
-                <Select
-                  value={((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
-                    ? (currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "20")
-                    : (currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm ?? "20")}
-                  onChange={e => {
-                    const val = e.target.value;
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", val);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", val);
-                    if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
-                      updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_value", val);
-                      updateGirderField(selectedGirder, safeSegmentIndex, "top_thickness_value_mm", val);
-                    }
-                  }}
-                  options={SAIL_APPROVED_THICKNESS_VALUES}
-                />
-              )}
-
-              <Label>Support Type:</Label>
-              <Select
-                value={girderDetails.support_type || currentSegment.support_type || "Major Laterally Supported"}
-                onChange={e => updateGirderField(selectedGirder, safeSegmentIndex, "support_type", e.target.value)}
-                options={["Major Laterally Supported", "Minor Laterally Unsupported", "Major Laterally Unsupported"]}
-              />
-
-              <Label>Support Width (mm):</Label>
-              <Input
-                value={girderDetails.support_width ?? girderDetails.support_width_mm ?? currentSegment.support_width ?? currentSegment.support_width_mm ?? "500"}
-                onChange={e => {
-                  updateGirderField(selectedGirder, safeSegmentIndex, "support_width", e.target.value);
-                  updateGirderField(selectedGirder, safeSegmentIndex, "support_width_mm", e.target.value);
-                }}
-              />
-
-              <Label>Web Thickness, w<sub>t</sub> (mm):</Label>
-              {isOptimized ? (
-                <Select
-                  value={currentSegment.web_thickness_mode ?? "All"}
-                  onChange={e => {
-                    const val = e.target.value;
-                    updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_mode", val);
-                    if (val === "Custom") {
-                      handleOpenThicknessDialog("web_thickness_value", currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? "");
-                    }
-                  }}
-                  options={["All", "Custom"]}
-                />
-              ) : (
-                <Select
-                  value={currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? "12"}
-                  onChange={e => {
-                    updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_value", e.target.value);
-                    updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_value_mm", e.target.value);
-                  }}
-                  options={SAIL_APPROVED_THICKNESS_VALUES}
-                />
-              )}
-
-              <Label>Web Type:</Label>
-              <Select
-                value={girderDetails.web_type || currentSegment.web_type || "Thick Web without ITS"}
-                onChange={e => updateGirderField(selectedGirder, safeSegmentIndex, "web_type", e.target.value)}
-                options={["Thin Web with ITS", "Thick Web without ITS"]}
-              />
-            </>
-          )}
-
-          {/* Rolled Fields */}
-          {girderDetails.type === "Rolled" && (
-            <>
-              <Label>IS Section:</Label>
-              <Select
-                value={currentSegment.is_section || "MB 500"}
-                onChange={e => updateGirderField(selectedGirder, safeSegmentIndex, "is_section", e.target.value)}
-                options={activeRolledIsSections}
-              />
-            </>
-          )}
-
-          {/* Common restraint fields */}
-          <Label>Torsional Restraint:</Label>
-          <Select
-            value={girderDetails.torsional_restraint || "Fully Restrained"}
-            onChange={e => updateGirderField(selectedGirder, safeSegmentIndex, "torsional_restraint", e.target.value)}
-            options={[
-              "Fully Restrained",
-              "Partially Restrained - Support Connection",
-              "Partially Restrained - Bearing Support"
-            ]}
-          />
-
-          <Label>Warping Restraint:</Label>
-          <Select
-            value={girderDetails.warping_restraint || "Both Flanges Restrained"}
-            onChange={e => updateGirderField(selectedGirder, safeSegmentIndex, "warping_restraint", e.target.value)}
-            options={["Both Flanges Restrained", "No Restraint"]}
-          />
-        </div>
+        ) : (
+          <div style={{ padding: 12, fontSize: 12, color: "#666" }}>Loading schema inputs...</div>
+        )}
       </div>
 
       {/* ROW 2, COL 1: PREVIEW DIAGRAM & PROPERTIES */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {!isOptimized && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Dynamic Diagram Box */}
           <div style={{
             background: "#ffffff",
@@ -1369,6 +1219,7 @@ export default function GirderDetailsTab({
           {/* Section Properties Box */}
           {renderSectionPropertiesBox()}
         </div>
+      )}
 
       {/* Bounds Modal Backdrop */}
       {boundsModalOpen && boundsField && (

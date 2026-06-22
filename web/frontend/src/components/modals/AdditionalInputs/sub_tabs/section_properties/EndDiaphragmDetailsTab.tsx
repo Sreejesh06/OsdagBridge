@@ -1074,7 +1074,7 @@ export default function EndDiaphragmDetailsTab({
   };
 
   return (
-    <div style={{ display: "flex", gap: 14, height: "100%", width: "100%" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, height: "100%", width: "100%" }}>
       {/* ── Left Column: Inputs ──────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
         {/* Selection Box */}
@@ -1359,9 +1359,9 @@ export default function EndDiaphragmDetailsTab({
       </div>
 
       {/* ── Right Column: Previews & Properties ───────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-        {!(isWelded && !isCustom) && (
-          isCross ? (
+      {(isCross || isCustom) && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
+          {isCross ? (
             <>
               {/* Bracing Layout Diagram */}
               <div style={{ background: "#fff", border: "1px solid #cfcfcf", borderRadius: 8, padding: "10px 12px" }}>
@@ -1383,21 +1383,21 @@ export default function EndDiaphragmDetailsTab({
               <SectionPreviewBox
                 title="Bracing"
                 sectionType={viewState.bracing_section_type || "Angle"}
-                designation={viewState.bracing_section || ""}
+                designation={isCustom ? (viewState.bracing_section || "") : ""}
                 visible={true}
               />
 
               <SectionPreviewBox
                 title="Top Chord"
                 sectionType={viewState.top_chord_type || "Angle"}
-                designation={viewState.top_chord_enabled ? (viewState.top_chord_size || "") : ""}
+                designation={isCustom && viewState.top_chord_enabled ? (viewState.top_chord_size || "") : ""}
                 visible={!!viewState.top_chord_enabled}
               />
 
               <SectionPreviewBox
                 title="Bottom Chord"
                 sectionType={viewState.bottom_chord_type || "Angle"}
-                designation={effectiveBottomEnabled ? (viewState.bottom_chord_size || "") : ""}
+                designation={isCustom && effectiveBottomEnabled ? (viewState.bottom_chord_size || "") : ""}
                 visible={effectiveBottomEnabled}
               />
             </>
@@ -1413,9 +1413,9 @@ export default function EndDiaphragmDetailsTab({
               {/* Section Properties */}
               {renderSectionPropertiesBox()}
             </>
-          )
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Bounds Modal Backdrop */}
       {boundsModalOpen && boundsField && (

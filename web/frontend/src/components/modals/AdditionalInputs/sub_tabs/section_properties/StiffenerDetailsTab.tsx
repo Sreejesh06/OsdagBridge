@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Label, Input, Select } from "../../SharedComponents";
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 import { SAIL_APPROVED_THICKNESS_VALUES, ROLLED_PROPERTIES } from "../../../../constants/memberConstants";
 import { useBridgeStore } from "../../../../../store/bridgeStore";
 
@@ -121,6 +122,14 @@ export default function StiffenerDetailsTab({
   const designMode = useBridgeStore((state) => state.designMode);
   const isOptimized = designMode === "Optimized";
 
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("stiffener_details").then((data) => setSchema(data));
+    });
+  }, []);
+
   const memberIds = getStiffenerMemberIds();
 
   const [selectedStiffenerMember, setSelectedStiffenerMember] = useState<string>(() =>
@@ -211,66 +220,7 @@ export default function StiffenerDetailsTab({
     updateStiffenerField(selectedStiffenerMember, "longitudinal_stiffener", e.target.value);
   };
 
-  // ── renderModeValueSelect ───────────────────────────────────────────────────
-  /**
-   * Mirrors desktop _update_thickness_value_enabled_state:
-   * - Optimized: show mode select (disabled), hide value select unless mode=="Custom" (value also disabled)
-   * - Custom design: hide mode select, show value select (enabled when applicable)
-   */
-  const renderModeValueSelect = (
-    modeField: string,
-    valueField: string,
-    currentMode: string | undefined,
-    currentValue: string | undefined,
-    applicable: boolean
-  ) => {
-    const normalizedMode = (currentMode || "All") === "Custom" ? "Custom" : "All";
 
-    const handleModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      updateStiffenerField(selectedStiffenerMember, modeField, e.target.value);
-    };
-
-    const handleValueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      if (!isOptimized) {
-        // In custom mode, force mode to "Custom" on value change
-        updateStiffenerField(selectedStiffenerMember, modeField, "Custom");
-      }
-      updateStiffenerField(selectedStiffenerMember, valueField, e.target.value);
-    };
-
-    if (isOptimized) {
-      // Optimized: show mode select (disabled), show value only when mode==Custom (also disabled)
-      const showValueInOptimized = normalizedMode === "Custom";
-      return (
-        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-          <Select
-            value={normalizedMode}
-            onChange={handleModeChange}
-            options={["All", "Custom"]}
-            disabled={true}
-          />
-          {showValueInOptimized && (
-            <Select
-              value={currentValue || SAIL_APPROVED_THICKNESS_VALUES[0]}
-              onChange={handleValueChange}
-              options={SAIL_APPROVED_THICKNESS_VALUES}
-              disabled={true}
-            />
-          )}
-        </div>
-      );
-    } else {
-      // Custom design mode: hide mode select, show only value select
-      return (
-        <Select
-          value={currentValue || SAIL_APPROVED_THICKNESS_VALUES[0]}
-          onChange={handleValueChange}
-          options={SAIL_APPROVED_THICKNESS_VALUES}
-          disabled={!applicable}
-        />
-      );
-    }
-  };
 
   // ── CAD canvas geometry ─────────────────────────────────────────────────────
   const totalLength = segments.reduce((s: number, seg: any) => s + Number(seg.length || 0), 0);
@@ -607,130 +557,75 @@ export default function StiffenerDetailsTab({
             Stiffener Inputs
           </span>
 
-          <div style={{ display: "grid", gridTemplateColumns: "245px 1fr", rowGap: 10, columnGap: 14, alignItems: "start" }}>
-
-            {/* ── Bearing Stiffener rows — only for exterior members ── */}
-            {isExterior && (
-              <>
-                {/* No. of Bearing Stiffeners */}
-                <NormalLabel>No. of Bearing Stiffeners<br />(on one side only):</NormalLabel>
-                <Select
-                  value={stiff.bearing_stiffeners_each_end ?? ""}
-                  onChange={(e) => updateStiffenerField(selectedStiffenerMember, "bearing_stiffeners_each_end", e.target.value)}
-                  options={["1", "2", "3", "4"]}
-                  disabled={isOptimized}
-                />
-
-                {/* Bearing Spacing */}
-                <NormalLabel>Bearing Stiffener Spacing (mm):</NormalLabel>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <Input
-                    value={stiff.bearing_spacing_mm ?? ""}
-                    onChange={(e) => updateStiffenerField(selectedStiffenerMember, "bearing_spacing_mm", e.target.value)}
-                    placeholder={isOptimized ? "" : `Auto (${autoBearingSpacingMm} mm)`}
-                    disabled={isOptimized}
-                  />
-                </div>
-
-                {/* Bearing Thickness */}
-                <NormalLabel>Bearing Stiffener Thickness (mm):</NormalLabel>
-                {renderModeValueSelect(
-                  "bearing_thickness",
-                  "bearing_thickness_value",
-                  stiff.bearing_thickness,
-                  stiff.bearing_thickness_value,
-                  true
+          <div style={{ marginTop: 10 }}>
+            {schema ? (
+              <DynamicSchemaRenderer
+                fields={(schema.stiffener_inputs || []).filter((f: any) => 
+                  isExterior || !f.id.startsWith("bearing_")
                 )}
-
-                {/* Bearing Outstand */}
-                <NormalLabel>Outstand of Bearing Stiffener (mm):</NormalLabel>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <Input
-                    value={stiff.bearing_outstand_mm ?? ""}
-                    onChange={(e) => updateStiffenerField(selectedStiffenerMember, "bearing_outstand_mm", e.target.value)}
-                    placeholder={computedOutstand ?? "NA"}
-                    disabled={isOptimized}
-                  />
-                  {!isBearingOutstandValid && (
-                    <span style={{ fontSize: 9, color: "#d93838", fontWeight: 500 }}>
-                      Exceeds maximum outstand of {computedOutstand} mm
-                    </span>
-                  )}
-                  {isBearingOutstandValid && computedOutstand !== null && (
-                    <span style={{ fontSize: 9, color: "#888" }}>
-                      Max allowed outstand: {computedOutstand} mm
-                    </span>
-                  )}
-                </div>
-
-                <div style={{ height: 1, background: "#eee", gridColumn: "span 2", margin: "2px 0" }} />
-              </>
-            )}
-
-            {/* ── Intermediate Stiffener rows ── */}
-            <NormalLabel>Intermediate Stiffener:</NormalLabel>
-            <Select
-              value={stiff.intermediate_stiffener ?? ""}
-              onChange={handleIntermediateChange}
-              options={["No", "Yes"]}
-              disabled={isOptimized}
-            />
-
-            <NormalLabel>Intermediate Stiffener Spacing:</NormalLabel>
-            <Input
-              value={stiff.intermediate_spacing_mm ?? ""}
-              onChange={(e) => updateStiffenerField(selectedStiffenerMember, "intermediate_spacing_mm", e.target.value)}
-              placeholder="NA"
-              disabled={isOptimized || String(stiff.intermediate_stiffener ?? "") !== "Yes"}
-            />
-
-            <NormalLabel>Intermediate Stiffener Thickness (mm):</NormalLabel>
-            {renderModeValueSelect(
-              "intermediate_thickness",
-              "intermediate_thickness_value",
-              stiff.intermediate_thickness,
-              stiff.intermediate_thickness_value,
-              String(stiff.intermediate_stiffener ?? "") === "Yes"
-            )}
-
-            <NormalLabel>Outstand of Intermediate Stiffener (mm):</NormalLabel>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Input
-                value={stiff.intermediate_outstand_mm ?? ""}
-                onChange={(e) => updateStiffenerField(selectedStiffenerMember, "intermediate_outstand_mm", e.target.value)}
-                placeholder={computedOutstand ?? "NA"}
-                disabled={isOptimized || String(stiff.intermediate_stiffener ?? "") !== "Yes"}
+                data={{
+                  ...stiff,
+                  bearing_count_combo: stiff.bearing_stiffeners_each_end ?? "",
+                  bearing_spacing_input: stiff.bearing_spacing_mm ?? "",
+                  bearing_thick_combo: stiff.bearing_thickness,
+                  bearing_thick_value_combo: stiff.bearing_thickness_value,
+                  bearing_outstand_input: stiff.bearing_outstand_mm ?? "",
+                  intermediate_combo: stiff.intermediate_stiffener ?? "",
+                  intermediate_spacing_input: stiff.intermediate_spacing_mm ?? "",
+                  intermediate_thick_combo: stiff.intermediate_thickness,
+                  intermediate_thick_value_combo: stiff.intermediate_thickness_value,
+                  intermediate_outstand_input: stiff.intermediate_outstand_mm ?? "",
+                  longitudinal_combo: stiff.longitudinal_stiffener ?? "",
+                  long_thick_combo: stiff.longitudinal_thickness,
+                  long_thick_value_combo: stiff.longitudinal_thickness_value,
+                  thickness_values_mm: SAIL_APPROVED_THICKNESS_VALUES,
+                }}
+                placeholders={{
+                  bearing_spacing_input: isOptimized ? "" : `Auto (${autoBearingSpacingMm} mm)`,
+                  bearing_outstand_input: computedOutstand ?? "NA",
+                  intermediate_spacing_input: "NA",
+                  intermediate_outstand_input: computedOutstand ?? "NA",
+                }}
+                errors={{
+                  bearing_outstand_input: !isBearingOutstandValid 
+                    ? `Exceeds maximum outstand of ${computedOutstand} mm` 
+                    : (computedOutstand ? <span style={{ color: "#888" }}>Max allowed outstand: {computedOutstand} mm</span> : undefined),
+                  intermediate_outstand_input: (String(stiff.intermediate_stiffener ?? "") === "Yes" && !isInterOutstandValid)
+                    ? `Exceeds maximum outstand of ${computedOutstand} mm`
+                    : ((String(stiff.intermediate_stiffener ?? "") === "Yes" && computedOutstand) ? <span style={{ color: "#888" }}>Max allowed outstand: {computedOutstand} mm</span> : undefined),
+                }}
+                onChange={(fieldId, value) => {
+                  if (fieldId === "bearing_count_combo") updateStiffenerField(selectedStiffenerMember, "bearing_stiffeners_each_end", value);
+                  else if (fieldId === "bearing_spacing_input") updateStiffenerField(selectedStiffenerMember, "bearing_spacing_mm", value);
+                  else if (fieldId === "bearing_thick_combo") updateStiffenerField(selectedStiffenerMember, "bearing_thickness", value);
+                  else if (fieldId === "bearing_thick_value_combo") {
+                    if (!isOptimized) updateStiffenerField(selectedStiffenerMember, "bearing_thickness", "Custom");
+                    updateStiffenerField(selectedStiffenerMember, "bearing_thickness_value", value);
+                  }
+                  else if (fieldId === "bearing_outstand_input") updateStiffenerField(selectedStiffenerMember, "bearing_outstand_mm", value);
+                  else if (fieldId === "intermediate_combo") {
+                    updateStiffenerField(selectedStiffenerMember, "intermediate_stiffener", value);
+                    if (value === "No") updateStiffenerField(selectedStiffenerMember, "intermediate_spacing_mm", "NA");
+                    else if (String(stiff.intermediate_spacing_mm ?? "").toUpperCase() === "NA") updateStiffenerField(selectedStiffenerMember, "intermediate_spacing_mm", "");
+                  }
+                  else if (fieldId === "intermediate_spacing_input") updateStiffenerField(selectedStiffenerMember, "intermediate_spacing_mm", value);
+                  else if (fieldId === "intermediate_thick_combo") updateStiffenerField(selectedStiffenerMember, "intermediate_thickness", value);
+                  else if (fieldId === "intermediate_thick_value_combo") {
+                    if (!isOptimized) updateStiffenerField(selectedStiffenerMember, "intermediate_thickness", "Custom");
+                    updateStiffenerField(selectedStiffenerMember, "intermediate_thickness_value", value);
+                  }
+                  else if (fieldId === "intermediate_outstand_input") updateStiffenerField(selectedStiffenerMember, "intermediate_outstand_mm", value);
+                  else if (fieldId === "longitudinal_combo") updateStiffenerField(selectedStiffenerMember, "longitudinal_stiffener", value);
+                  else if (fieldId === "long_thick_combo") updateStiffenerField(selectedStiffenerMember, "longitudinal_thickness", value);
+                  else if (fieldId === "long_thick_value_combo") {
+                    if (!isOptimized) updateStiffenerField(selectedStiffenerMember, "longitudinal_thickness", "Custom");
+                    updateStiffenerField(selectedStiffenerMember, "longitudinal_thickness_value", value);
+                  }
+                }}
+                disabled={isOptimized}
               />
-              {String(stiff.intermediate_stiffener ?? "") === "Yes" && !isInterOutstandValid && (
-                <span style={{ fontSize: 9, color: "#d93838", fontWeight: 500 }}>
-                  Exceeds maximum outstand of {computedOutstand} mm
-                </span>
-              )}
-              {String(stiff.intermediate_stiffener ?? "") === "Yes" && isInterOutstandValid && computedOutstand !== null && (
-                <span style={{ fontSize: 9, color: "#888" }}>
-                  Max allowed outstand: {computedOutstand} mm
-                </span>
-              )}
-            </div>
-
-            <div style={{ height: 1, background: "#eee", gridColumn: "span 2", margin: "2px 0" }} />
-
-            {/* ── Longitudinal Stiffener rows ── */}
-            <NormalLabel>Longitudinal Stiffener:</NormalLabel>
-            <Select
-              value={stiff.longitudinal_stiffener ?? ""}
-              onChange={handleLongitudinalChange}
-              options={["No", "Yes and 1 stiffener", "Yes and 2 stiffeners"]}
-              disabled={isOptimized}
-            />
-
-            <NormalLabel>Longitudinal Stiffener Thickness (mm):</NormalLabel>
-            {renderModeValueSelect(
-              "longitudinal_thickness",
-              "longitudinal_thickness_value",
-              stiff.longitudinal_thickness,
-              stiff.longitudinal_thickness_value,
-              !!stiff.longitudinal_stiffener && stiff.longitudinal_stiffener !== "No"
+            ) : (
+              <div style={{ padding: 12, fontSize: 12, color: "#666" }}>Loading schema inputs...</div>
             )}
           </div>
 
@@ -738,14 +633,19 @@ export default function StiffenerDetailsTab({
           <span style={{ fontSize: 12, fontWeight: 700, color: "#333", marginTop: 10 }}>
             Web Buckling Details
           </span>
-          <div style={{ display: "grid", gridTemplateColumns: "245px 1fr", columnGap: 14, alignItems: "center" }}>
-            <NormalLabel>Shear Buckling Design Method:</NormalLabel>
-            <Select
-              value={stiff.shear_buckling_method ?? ""}
-              onChange={(e) => updateStiffenerField(selectedStiffenerMember, "shear_buckling_method", e.target.value)}
-              options={["Simple Post Critical", "Tension Field"]}
-              disabled={isOptimized}
-            />
+          <div style={{ marginTop: 10 }}>
+            {schema ? (
+              <DynamicSchemaRenderer
+                fields={schema.web_buckling_inputs || []}
+                data={{
+                  method_combo: stiff.shear_buckling_method ?? ""
+                }}
+                onChange={(fieldId, value) => {
+                  if (fieldId === "method_combo") updateStiffenerField(selectedStiffenerMember, "shear_buckling_method", value);
+                }}
+                disabled={isOptimized}
+              />
+            ) : null}
           </div>
         </div>
 

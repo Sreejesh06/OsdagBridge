@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Label, Input, Select } from "../../SharedComponents";
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 import { STANDARD_ANGLE_SECTIONS, STANDARD_CHANNEL_SECTIONS } from "../../../../constants/memberConstants";
 import { useBridgeStore } from "../../../../../store/bridgeStore";
 
@@ -153,8 +154,6 @@ function BracingLayoutSvg({ bracingType, topChord, bottomChord, memberLabel, pai
                 rx={4}
                 ry={4}
                 fill="rgba(255, 255, 255, 0.88)"
-                stroke="#bbbbbb"
-                strokeWidth={1}
               />
               <text
                 x={cx}
@@ -446,6 +445,14 @@ export default function CrossBracingDetailsTab({
   const setDesignMode = useBridgeStore((state) => state.setDesignMode);
   const isCustom = designMode === "Custom";
 
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("cross_bracing_details").then((data) => setSchema(data));
+    });
+  }, []);
+
   const angleOptions = STANDARD_ANGLE_SECTIONS;
   const channelOptions = STANDARD_CHANNEL_SECTIONS;
 
@@ -527,99 +534,53 @@ export default function CrossBracingDetailsTab({
         <div style={{ background: "#fff", border: "1px solid #cfcfcf", borderRadius: 8, padding: "10px 14px", flex: 1 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#4b4b4b", marginBottom: 10 }}>Section Inputs:</div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", rowGap: 8, columnGap: 14, alignItems: "center" }}>
-            
-            {/* Design dropdown */}
-            <NormalLabel>Design:</NormalLabel>
-            <Select
-              value={designMode}
-              onChange={(e) => setDesignMode(e.target.value as "Optimized" | "Custom")}
-              options={["Optimized", "Custom"]}
-            />
-
-            {/* Type of Bracing */}
-            <NormalLabel>Type of Bracing:</NormalLabel>
-            <Select
-              value={brace.bracing_type || "K-Bracing"}
-              onChange={(e) => handleBracingTypeChange(e.target.value)}
-              options={BRACING_TYPE_OPTIONS}
-            />
-
-            {/* Bracing Section Type */}
-            <Label>Bracing Section Type:</Label>
-            <Select
-              value={brace.bracing_section_type || "Angle"}
-              onChange={(e) => updateBracingField(selectedPair, "bracing_section_type", e.target.value)}
-              options={SECTION_TYPE_OPTIONS}
-              disabled={!isCustom}
-            />
-
-            {/* Bracing Section Designation */}
-            <Label>Bracing Section Designation:</Label>
-            <Select
-              value={brace.bracing_section || "ISA 5050x6"}
-              onChange={(e) => updateBracingField(selectedPair, "bracing_section", e.target.value)}
-              options={sectionOptionsFor(brace.bracing_section_type || "Angle")}
-              disabled={!isCustom}
-            />
-
-            {/* Top Chord */}
-            <Label>Top Chord:</Label>
-            <input
-              type="checkbox"
-              checked={!!brace.top_chord_enabled}
-              onChange={(e) => handleTopChordToggle(e.target.checked)}
-              style={{ width: 15, height: 15 }}
-            />
-
-            <Label>Top Chord Section Type:</Label>
-            <Select
-              value={brace.top_chord_type || "Angle"}
-              onChange={(e) => updateBracingField(selectedPair, "top_chord_type", e.target.value)}
-              options={SECTION_TYPE_OPTIONS}
-              disabled={!isCustom || !brace.top_chord_enabled}
-            />
-
-            <Label>Top Chord Section Designation:</Label>
-            <Select
-              value={brace.top_chord_size || "ISA 5050x6"}
-              onChange={(e) => updateBracingField(selectedPair, "top_chord_size", e.target.value)}
-              options={sectionOptionsFor(brace.top_chord_type || "Angle")}
-              disabled={!isCustom || !brace.top_chord_enabled}
-            />
-
-            {/* Bottom Chord */}
-            <Label>Bottom Chord:</Label>
-            <input
-              type="checkbox"
-              checked={effectiveBottomEnabled}
-              onChange={(e) => handleBottomChordToggle(e.target.checked)}
-              disabled={isKBracing}
-              style={{ width: 15, height: 15 }}
-            />
-
-            <Label>Bottom Chord Section Type:</Label>
-            <Select
-              value={brace.bottom_chord_type || "Angle"}
-              onChange={(e) => updateBracingField(selectedPair, "bottom_chord_type", e.target.value)}
-              options={SECTION_TYPE_OPTIONS}
-              disabled={!isCustom || !effectiveBottomEnabled}
-            />
-
-            <Label>Bottom Chord Section Designation:</Label>
-            <Select
-              value={brace.bottom_chord_size || "ISA 5050x6"}
-              onChange={(e) => updateBracingField(selectedPair, "bottom_chord_size", e.target.value)}
-              options={sectionOptionsFor(brace.bottom_chord_type || "Angle")}
-              disabled={!isCustom || !effectiveBottomEnabled}
-            />
-
-            {/* Spacing */}
-            <NormalLabel>Spacing (m):</NormalLabel>
-            <Input
-              value={String(brace.spacing || "3")}
-              onChange={(e) => updateBracingField(selectedPair, "spacing", e.target.value)}
-            />
+          <div style={{ marginTop: 10 }}>
+            {schema ? (
+              <DynamicSchemaRenderer
+                fields={(schema.section_inputs || []).filter((f: any) => f.id !== "design")}
+                data={{
+                  design_combo: designMode,
+                  bracing_type_combo: brace.bracing_type || "K-Bracing",
+                  bracing_section_type_combo: brace.bracing_section_type || "Angle",
+                  bracing_section_combo: brace.bracing_section || "ISA 5050x6",
+                  bracing_section_combo_options: sectionOptionsFor(brace.bracing_section_type || "Angle"),
+                  top_chord_checkbox: !!brace.top_chord_enabled,
+                  top_chord_type_combo: brace.top_chord_type || "Angle",
+                  top_chord_size_combo: brace.top_chord_size || "ISA 5050x6",
+                  top_chord_size_combo_options: sectionOptionsFor(brace.top_chord_type || "Angle"),
+                  bottom_chord_checkbox: effectiveBottomEnabled,
+                  bottom_chord_type_combo: brace.bottom_chord_type || "Angle",
+                  bottom_chord_size_combo: brace.bottom_chord_size || "ISA 5050x6",
+                  bottom_chord_size_combo_options: sectionOptionsFor(brace.bottom_chord_type || "Angle"),
+                  spacing_input: String(brace.spacing || "3"),
+                }}
+                onChange={(fieldId, value) => {
+                  if (fieldId === "design_combo") setDesignMode(value as "Optimized" | "Custom");
+                  else if (fieldId === "bracing_type_combo") handleBracingTypeChange(value);
+                  else if (fieldId === "bracing_section_type_combo") updateBracingField(selectedPair, "bracing_section_type", value);
+                  else if (fieldId === "bracing_section_combo") updateBracingField(selectedPair, "bracing_section", value);
+                  else if (fieldId === "top_chord_checkbox") handleTopChordToggle(value);
+                  else if (fieldId === "top_chord_type_combo") updateBracingField(selectedPair, "top_chord_type", value);
+                  else if (fieldId === "top_chord_size_combo") updateBracingField(selectedPair, "top_chord_size", value);
+                  else if (fieldId === "bottom_chord_checkbox") handleBottomChordToggle(value);
+                  else if (fieldId === "bottom_chord_type_combo") updateBracingField(selectedPair, "bottom_chord_type", value);
+                  else if (fieldId === "bottom_chord_size_combo") updateBracingField(selectedPair, "bottom_chord_size", value);
+                  else if (fieldId === "spacing_input") updateBracingField(selectedPair, "spacing", value);
+                }}
+                isOptimizedMode={!isCustom}
+                fieldDisabled={{
+                  bracing_section_type_combo: !isCustom,
+                  bracing_section_combo: !isCustom,
+                  top_chord_type_combo: !isCustom || !brace.top_chord_enabled,
+                  top_chord_size_combo: !isCustom || !brace.top_chord_enabled,
+                  bottom_chord_checkbox: isKBracing,
+                  bottom_chord_type_combo: !isCustom || !effectiveBottomEnabled,
+                  bottom_chord_size_combo: !isCustom || !effectiveBottomEnabled,
+                }}
+              />
+            ) : (
+              <div style={{ padding: 12, fontSize: 12, color: "#666" }}>Loading schema inputs...</div>
+            )}
           </div>
         </div>
       </div>
@@ -647,23 +608,24 @@ export default function CrossBracingDetailsTab({
         <SectionPreviewBox
           title="Bracing"
           sectionType={brace.bracing_section_type || "Angle"}
-          designation={brace.bracing_section || ""}
+          designation={isCustom ? (brace.bracing_section || "") : ""}
           visible={true}
         />
 
         <SectionPreviewBox
           title="Top Chord"
           sectionType={brace.top_chord_type || "Angle"}
-          designation={brace.top_chord_enabled ? (brace.top_chord_size || "") : ""}
+          designation={isCustom && brace.top_chord_enabled ? (brace.top_chord_size || "") : ""}
           visible={!!brace.top_chord_enabled}
         />
 
         <SectionPreviewBox
           title="Bottom Chord"
           sectionType={brace.bottom_chord_type || "Angle"}
-          designation={effectiveBottomEnabled ? (brace.bottom_chord_size || "") : ""}
+          designation={isCustom && effectiveBottomEnabled ? (brace.bottom_chord_size || "") : ""}
           visible={effectiveBottomEnabled}
         />
+
       </div>
     </div>
   );
