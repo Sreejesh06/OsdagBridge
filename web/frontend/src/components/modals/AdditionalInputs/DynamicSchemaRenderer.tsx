@@ -110,40 +110,80 @@ export function DynamicSchemaRenderer({
               {field.label && <span style={{ fontSize: 12 }}>{field.label}</span>}
             </div>
           );
+        } else if (field.type === "computed") {
+          inputElement = (
+            <input
+              type="text"
+              value={value ?? ""}
+              readOnly
+              style={{
+                width: "100%", height: 28, borderRadius: 5, border: "1px solid #8a8a8a",
+                padding: "0 8px", fontSize: 11,
+                background: "#f0f0f0", color: "#5a5a5a",
+                outline: "none", boxSizing: "border-box",
+              }}
+            />
+          );
         } else if (field.type === "mode_line" || field.type === "mode_value") {
-           const textValue = data[fieldId] ?? "";
            const modeId = field.bind_mode || `${fieldId}_mode`;
-           const modeValue = data[modeId] ?? (field.mode_choices?.[0] || "All");
+           const modeValue = data[modeId] ?? (field.default_mode || field.mode_choices?.[0] || "All");
            
-           if (disabled || isOptimizedMode) {
-             // Optimized mode: Show the mode selection (All / Custom)
+           const valueId = field.bind_value || fieldId;
+           const textValue = data[valueId] ?? "";
+
+           // If it has bind_value, it expects the pair layout (like in Loading tabs)
+           if (field.bind_value) {
+             const isValueDisabled = isFieldDisabled || (modeValue !== "Custom" && modeValue !== "User-defined");
              inputElement = (
-               <Select
-                  value={modeValue}
-                  onChange={(e) => onChange(modeId, e.target.value)}
-                  options={field.mode_choices || ["All", "Custom"]}
-                  disabled={field.read_only === true || fieldDisabled[modeId] === true}
-               />
+               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                 <Select
+                    value={modeValue}
+                    onChange={(e) => onChange(modeId, e.target.value)}
+                    options={field.mode_choices || ["Automatic", "Custom"]}
+                    disabled={isFieldDisabled}
+                    style={{ width: field.mode_width || 120 }}
+                 />
+                 <Input
+                    value={textValue}
+                    onChange={(e) => onChange(valueId, e.target.value)}
+                    disabled={isValueDisabled}
+                    placeholder={placeholders[valueId] || field.placeholder || ""}
+                    style={{ width: field.value_width || "auto" }}
+                 />
+               </div>
              );
            } else {
-             // Custom mode: Show the actual value input or dropdown
-             if (field.type === "mode_value") {
-               const valueChoices = data.thickness_values_mm || ["8", "10", "12", "14", "16", "18", "20", "22", "25", "28", "32", "36", "40", "45", "50", "56", "63", "75", "80", "90", "100", "110", "120"];
+             // Standard layout (like in Member Properties tabs)
+             if (disabled || isOptimizedMode) {
+               // Optimized mode: Show the mode selection
                inputElement = (
-                  <Select
-                    value={textValue}
-                    onChange={(e) => onChange(fieldId, e.target.value)}
-                    options={valueChoices}
-                  />
+                 <Select
+                    value={modeValue}
+                    onChange={(e) => onChange(modeId, e.target.value)}
+                    options={field.mode_choices || ["All", "Custom"]}
+                    disabled={field.read_only === true || fieldDisabled[modeId] === true}
+                 />
                );
              } else {
-               inputElement = (
-                  <Input
-                    value={textValue}
-                    onChange={(e) => onChange(fieldId, e.target.value)}
-                    readOnly={field.read_only}
-                  />
-               );
+               // Custom mode: Show the actual value input or dropdown
+               if (field.type === "mode_value") {
+                 const valueChoices = data.thickness_values_mm || ["8", "10", "12", "14", "16", "18", "20", "22", "25", "28", "32", "36", "40", "45", "50", "56", "63", "75", "80", "90", "100", "110", "120"];
+                 inputElement = (
+                    <Select
+                      value={textValue}
+                      onChange={(e) => onChange(valueId, e.target.value)}
+                      options={valueChoices}
+                    />
+                 );
+               } else {
+                 inputElement = (
+                    <Input
+                      value={textValue}
+                      onChange={(e) => onChange(valueId, e.target.value)}
+                      readOnly={field.read_only}
+                    />
+                 );
+               }
              }
            }
         } else {

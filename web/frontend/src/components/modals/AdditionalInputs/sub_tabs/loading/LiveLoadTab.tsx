@@ -1,16 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Label, Select, Input, TwoColumnLayout, LeftColumn, DescriptionBox, SectionBox, Checkbox } from "../../SharedComponents";
 import LiveLoadCustomVehicleModal from "./LiveLoadCustomVehicleModal";
-
-const IRC_VEHICLES = [
-  "Class A",
-  "Class 70R Wheeled",
-  "Class 70R Tracked",
-  "Class AA Wheeled",
-  "Class AA Tracked",
-  "Class SV",
-  "Class 70R Bogie",
-];
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 
 interface LiveLoadTabProps {
   form: any;
@@ -18,20 +9,26 @@ interface LiveLoadTabProps {
 }
 
 export default function LiveLoadTab({ form, updateField }: LiveLoadTabProps) {
-  const selectedVehicles: Record<string, boolean> = form.liveLoadVehicles ?? {};
-  const customVehicles: Record<string, any> = form.customVehicles ?? {};
-  const brakingVehicles: Record<string, boolean> = form.brakingVehicles ?? { "Class SV": true };
-  const footpathMode = form.footpathMode ?? "Automatic";
-
+  const [schema, setSchema] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicleName, setEditingVehicleName] = useState<string | null>(null);
 
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("live_load_tab").then((data) => setSchema(data));
+    });
+  }, []);
+
+  const selectedVehicles: Record<string, boolean> = form.irc_vehicle_checkboxes ?? {};
+  const customVehicles: Record<string, any> = form.custom_vehicle_table ?? {};
+  const brakingVehicles: Record<string, boolean> = form.braking_vehicle_checkboxes ?? { "Class SV": true };
+
   const toggleVehicle = (name: string, checked: boolean) => {
-    updateField("liveLoadVehicles", { ...selectedVehicles, [name]: checked });
+    updateField("irc_vehicle_checkboxes", { ...selectedVehicles, [name]: checked });
   };
 
   const toggleBraking = (name: string, checked: boolean) => {
-    updateField("brakingVehicles", { ...brakingVehicles, [name]: checked });
+    updateField("braking_vehicle_checkboxes", { ...brakingVehicles, [name]: checked });
   };
 
   const handleAddCustomVehicleClick = () => {
@@ -50,11 +47,11 @@ export default function LiveLoadTab({ form, updateField }: LiveLoadTabProps) {
       delete newCustomVehicles[editingVehicleName];
     }
     newCustomVehicles[vehicle.name] = vehicle;
-    updateField("customVehicles", newCustomVehicles);
+    updateField("custom_vehicle_table", newCustomVehicles);
 
     // Auto-add to braking list
     const newBraking = { ...brakingVehicles, [vehicle.name]: true };
-    updateField("brakingVehicles", newBraking);
+    updateField("braking_vehicle_checkboxes", newBraking);
 
     setIsModalOpen(false);
   };
@@ -63,16 +60,14 @@ export default function LiveLoadTab({ form, updateField }: LiveLoadTabProps) {
     if (!window.confirm(`Delete custom vehicle '${name}'?`)) return;
     const newCustomVehicles = { ...customVehicles };
     delete newCustomVehicles[name];
-    updateField("customVehicles", newCustomVehicles);
+    updateField("custom_vehicle_table", newCustomVehicles);
 
     const newBraking = { ...brakingVehicles };
     delete newBraking[name];
-    updateField("brakingVehicles", newBraking);
+    updateField("braking_vehicle_checkboxes", newBraking);
   };
 
   const customVehicleKeys = Object.keys(customVehicles);
-
-  // Braking list dynamically computed: Class SV + custom vehicles
   const dynamicBrakingList = ["Class SV", ...customVehicleKeys];
 
   return (
@@ -82,126 +77,101 @@ export default function LiveLoadTab({ form, updateField }: LiveLoadTabProps) {
           Live Load (LL) Inputs
         </div>
 
-        <SectionBox>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#3a3a3a", marginBottom: 12 }}>
-            Vehicles from IRC 6
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", rowGap: 12, maxWidth: 380, marginLeft: 8 }}>
-            {IRC_VEHICLES.map(v => (
-              <React.Fragment key={v}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#333", alignSelf: "center" }}>{v}</div>
-                <Checkbox
-                  checked={selectedVehicles[v] ?? true}
-                  onChange={checked => toggleVehicle(v, checked)}
-                />
-              </React.Fragment>
-            ))}
-          </div>
-        </SectionBox>
-
-        <SectionBox>
-          {customVehicleKeys.length > 0 && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#3a3a3a" }}>
-                Custom Vehicle
-              </div>
-              <button onClick={handleAddCustomVehicleClick} style={btnStyle}>Add</button>
-            </div>
-          )}
-
-          {customVehicleKeys.length === 0 ? (
-            <>
-
-              <button onClick={handleAddCustomVehicleClick} style={{ ...btnStyle, alignSelf: "flex-start" }}>
-                Add Custom Vehicle
-              </button>
-            </>
-          ) : (
-            <div style={{ border: "1px solid #eee", borderRadius: 4, overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, textAlign: "left" }}>
-                <tbody>
-                  {customVehicleKeys.map(name => (
-                    <tr key={name} style={{ borderBottom: "1px solid #eee" }}>
-                      <td style={{ padding: "6px 8px", fontWeight: 600 }}>{name}</td>
-                      <td style={{ padding: "6px 8px", width: 30 }}>
-                        <Checkbox checked={true} onChange={() => { }} disabled />
-                      </td>
-                      <td style={{ padding: "6px 8px", width: 50 }}>
-                        <button onClick={() => handleEditCustomVehicleClick(name)} style={smallBtnStyle}>Edit</button>
-                      </td>
-                      <td style={{ padding: "6px 8px", width: 50 }}>
-                        <button onClick={() => handleDeleteCustomVehicle(name)} style={smallBtnStyle}>Delete</button>
-                      </td>
-                    </tr>
+        {schema?.sections?.map((section: any, idx: number) => {
+          if (section.type === "checkbox_list") {
+            return (
+              <SectionBox key={idx}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#3a3a3a", marginBottom: 12 }}>
+                  {section.title}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", rowGap: 12, maxWidth: 380, marginLeft: 8 }}>
+                  {(section.items || []).map((v: string) => (
+                    <React.Fragment key={v}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: "#333", alignSelf: "center" }}>{v}</div>
+                      <Checkbox
+                        checked={selectedVehicles[v] ?? section.default_checked ?? true}
+                        onChange={checked => toggleVehicle(v, checked)}
+                      />
+                    </React.Fragment>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </SectionBox>
-
-        <SectionBox>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#3a3a3a", marginBottom: 12 }}>
-            Braking Load from Vehicles
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", rowGap: 12, maxWidth: 380, marginLeft: 8 }}>
-            {dynamicBrakingList.map(v => (
-              <React.Fragment key={`brake_${v}`}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#333", alignSelf: "center" }}>{v}</div>
-                <Checkbox
-                  checked={brakingVehicles[v] ?? true}
-                  onChange={checked => toggleBraking(v, checked)}
+                </div>
+              </SectionBox>
+            );
+          } else if (section.type === "custom_vehicle_table") {
+            return (
+              <SectionBox key={idx}>
+                {customVehicleKeys.length > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#3a3a3a" }}>
+                      {section.title}
+                    </div>
+                    <button onClick={handleAddCustomVehicleClick} style={btnStyle}>Add</button>
+                  </div>
+                )}
+                {customVehicleKeys.length === 0 ? (
+                  <button onClick={handleAddCustomVehicleClick} style={{ ...btnStyle, alignSelf: "flex-start" }}>
+                    Add Custom Vehicle
+                  </button>
+                ) : (
+                  <div style={{ border: "1px solid #eee", borderRadius: 4, overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, textAlign: "left" }}>
+                      <tbody>
+                        {customVehicleKeys.map(name => (
+                          <tr key={name} style={{ borderBottom: "1px solid #eee" }}>
+                            <td style={{ padding: "6px 8px", fontWeight: 600 }}>{name}</td>
+                            <td style={{ padding: "6px 8px", width: 30 }}>
+                              <Checkbox checked={true} onChange={() => { }} disabled />
+                            </td>
+                            <td style={{ padding: "6px 8px", width: 50 }}>
+                              <button onClick={() => handleEditCustomVehicleClick(name)} style={smallBtnStyle}>Edit</button>
+                            </td>
+                            <td style={{ padding: "6px 8px", width: 50 }}>
+                              <button onClick={() => handleDeleteCustomVehicle(name)} style={smallBtnStyle}>Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </SectionBox>
+            );
+          } else if (section.type === "dynamic_checkbox_list") {
+            return (
+              <SectionBox key={idx}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#3a3a3a", marginBottom: 12 }}>
+                  {section.title}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", rowGap: 12, maxWidth: 380, marginLeft: 8 }}>
+                  {dynamicBrakingList.map(v => (
+                    <React.Fragment key={`brake_${v}`}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: "#333", alignSelf: "center" }}>{v}</div>
+                      <Checkbox
+                        checked={brakingVehicles[v] ?? section.default_checked ?? true}
+                        onChange={checked => toggleBraking(v, checked)}
+                      />
+                    </React.Fragment>
+                  ))}
+                </div>
+              </SectionBox>
+            );
+          } else {
+            // Treat as a standard field
+            return (
+              <SectionBox key={idx}>
+                <DynamicSchemaRenderer
+                  fields={section.fields || [section]}
+                  data={form}
+                  onChange={updateField}
                 />
-              </React.Fragment>
-            ))}
-          </div>
-        </SectionBox>
-
-        <SectionBox>
-          <div style={{
-            display: "grid", gridTemplateColumns: "1fr 256px",
-            rowGap: 14, columnGap: 16, alignItems: "center",
-          }}>
-            <Label>Eccentricity from top of Deck (m)</Label>
-            <Input
-              value={form.eccentricity ?? "0.00"}
-              onChange={e => updateField("eccentricity", e.target.value)}
-            />
-          </div>
-        </SectionBox>
-
-        <SectionBox>
-          <div style={{
-            display: "grid", gridTemplateColumns: "1fr 140px 100px",
-            rowGap: 10, columnGap: 16, alignItems: "center",
-          }}>
-            <Label>Footpath Pressure (kN/m<sup>2</sup>)</Label>
-            <Select
-              value={footpathMode}
-              onChange={e => updateField("footpathMode", e.target.value)}
-              options={["Automatic", "User-defined"]}
-            />
-            <input
-              type="text"
-              value={footpathMode === "Automatic" ? "" : (form.footpathPressure ?? "")}
-              onChange={e => updateField("footpathPressure", e.target.value)}
-              disabled={footpathMode !== "User-defined"}
-              style={{
-                height: 28, borderRadius: 5, border: "1px solid #000",
-                padding: "0 6px", fontSize: 12,
-                background: footpathMode !== "User-defined" ? "#f1f1f1" : "#fff",
-                color: footpathMode !== "User-defined" ? "#888" : "#000",
-                boxSizing: "border-box"
-              }}
-            />
-          </div>
-        </SectionBox>
+              </SectionBox>
+            );
+          }
+        })}
       </LeftColumn>
 
       <DescriptionBox>
-        {`211.2 The braking effect on a simply supported span or a continuous unit of spans or on any other type of bridge unit shall be assumed to have the following value:\n\n` +
-          `a) In the case of a single lane or a two lane bridge: twenty percent of the first train load plus ten percent of the load of the succeeding trains or part thereof, the train loads in one lane only being considered for the purpose of this subclause. Where the entire first train is not on the full span, the braking force shall be taken as equal to twenty percent of the loads actually on the span or continuous unit of spans.\n` +
-          `b) In the case of bridges having more than two lanes: as in (a) above for the first two lanes plus five percent of the loads on the lanes in excess of two.`}
+        {schema?.description?.text || ""}
       </DescriptionBox>
 
       {isModalOpen && (

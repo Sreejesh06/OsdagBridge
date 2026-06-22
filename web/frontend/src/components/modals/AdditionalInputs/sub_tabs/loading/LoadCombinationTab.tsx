@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TwoColumnLayout, LeftColumn, DescriptionBox, SectionBox } from "../../SharedComponents";
 import CustomLoadCombinationModal from "./CustomLoadCombinationModal";
 import type { CustomLoadCombination } from "./CustomLoadCombinationModal";
@@ -28,6 +28,14 @@ interface LoadCombinationTabProps {
 }
 
 export default function LoadCombinationTab({ form, updateField }: LoadCombinationTabProps) {
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("load_combination_tab").then((data) => setSchema(data));
+    });
+  }, []);
+
   const customCombos: CustomLoadCombination[] = Array.isArray(form?.customLoadCombinations)
     ? form.customLoadCombinations
     : [];
@@ -47,13 +55,16 @@ export default function LoadCombinationTab({ form, updateField }: LoadCombinatio
     setShowModal(false);
   };
 
+  const ircTitle = schema?.sections?.[0]?.title || "Load Combinations from IRC 6";
+  const customTitle = schema?.sections?.[1]?.title || "Custom Load Combination";
+
   return (
     <TwoColumnLayout>
       <LeftColumn>
         {/* IRC 6 Load Combinations — plain section, dynamically populated (empty by default, same as desktop) */}
         <SectionBox>
           <div style={{ fontWeight: 700, fontSize: 11, color: "#2b2b2b", marginBottom: 10 }}>
-            Load Combinations from IRC 6
+            {ircTitle}
           </div>
           {/* Empty placeholder — matches desktop irc_placeholder widget */}
           <div style={{ minHeight: 100 }} />
@@ -64,7 +75,7 @@ export default function LoadCombinationTab({ form, updateField }: LoadCombinatio
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: customCombos.length > 0 ? 8 : 0 }}>
             {customCombos.length > 0 && (
               <div style={{ fontWeight: 700, fontSize: 11, color: "#2b2b2b" }}>
-                Custom Load Combination
+                {customTitle}
               </div>
             )}
             <button

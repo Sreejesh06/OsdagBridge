@@ -1,8 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Label, Input, Select, TwoColumnLayout, LeftColumn, DescriptionBox, SectionBox } from "../../SharedComponents";
-
-const LOAD_CASES = ["DL", "DW", "SIDL", "LL", "EL", "WL", "TL", "Custom"];
-const LOAD_TYPES = ["Point", "Line"];
 
 interface CustomLoadItem {
   id: number;
@@ -23,6 +20,14 @@ interface CustomLoadTabProps {
 }
 
 export default function CustomLoadTab({ form, updateField }: CustomLoadTabProps) {
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("custom_load_tab").then((data) => setSchema(data));
+    });
+  }, []);
+
   const items: CustomLoadItem[] = form.customLoads ?? [];
   
   const [loadCase, setLoadCase] = useState("DL");
@@ -133,6 +138,9 @@ export default function CustomLoadTab({ form, updateField }: CustomLoadTabProps)
     }
     setSelectedId(null);
   };
+
+  const LOAD_CASES = schema?.load_case_choices || ["DL", "DW", "SIDL", "LL", "EL", "WL", "TL", "Custom"];
+  const LOAD_TYPES = schema?.load_type_choices || ["Point", "Line", "Area"];
 
   return (
     <TwoColumnLayout>

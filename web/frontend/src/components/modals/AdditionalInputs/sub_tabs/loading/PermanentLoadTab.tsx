@@ -1,5 +1,6 @@
-import React from "react";
-import { Label, Input, TwoColumnLayout, LeftColumn, DescriptionBox, SectionBox } from "../../SharedComponents";
+import React, { useState, useEffect } from "react";
+import { TwoColumnLayout, LeftColumn, DescriptionBox, SectionBox } from "../../SharedComponents";
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 
 interface PermanentLoadTabProps {
   form: any;
@@ -7,22 +8,26 @@ interface PermanentLoadTabProps {
 }
 
 export default function PermanentLoadTab({ form, updateField }: PermanentLoadTabProps) {
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("permanent_load_tab").then((data) => setSchema(data));
+    });
+  }, []);
+
   return (
     <TwoColumnLayout>
       <LeftColumn>
-        <SectionBox title="Dead Load (DL)">
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 180px",
-            rowGap: 14, columnGap: 30, alignItems: "center",
-          }}>
-            <Label>Self-weight modification factor</Label>
-            <Input
-              value={form.selfWeightFactor ?? "1.00"}
-              onChange={e => updateField("selfWeightFactor", e.target.value)}
+        {schema?.sections?.map((section: any, idx: number) => (
+          <SectionBox title={section.title} key={idx}>
+            <DynamicSchemaRenderer
+              fields={section.fields || [section]}
+              data={form}
+              onChange={updateField}
             />
-          </div>
-        </SectionBox>
+          </SectionBox>
+        ))}
       </LeftColumn>
       
       <DescriptionBox>
