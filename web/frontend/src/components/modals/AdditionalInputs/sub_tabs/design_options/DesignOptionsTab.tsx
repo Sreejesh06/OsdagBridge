@@ -1,14 +1,8 @@
 import React, { useState } from "react";
 import { Label, Input, Select, TwoColumnLayout, LeftColumn, DescriptionBox, SectionBox } from "../../SharedComponents";
 
-const CONSTRUCTION_STAGES = ["Yes", "No"];
-const REINFORCEMENT_MATERIALS = [
-  "Fe 415", "Fe 415D", "Fe 500", "Fe 500D", "Fe 550", "Fe 550D", "Fe 600",
-];
-const SHEAR_STUD_DIAMETERS = ["12", "16", "20", "22", "25"];
-const SHEAR_STUD_COUNTS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 
-// Default reinforcement sizes (can be filtered by bounds)
 const ALL_REINFORCEMENT_SIZES = [8, 10, 12, 16, 20, 25, 28, 32, 36, 40];
 
 interface DesignOptionsTabProps {
@@ -90,13 +84,25 @@ function ReinforcementBoundsDialog({ current, onSave, onCancel }: BoundsDialogPr
 }
 
 export default function DesignOptionsTab({ form, updateField }: DesignOptionsTabProps) {
+  const [schema, setSchema] = useState<any>(null);
   const [showBoundsDialog, setShowBoundsDialog] = useState(false);
 
-  const bounds: { lower: number; upper: number } = form.reinforcementBounds ?? { lower: 8, upper: 40 };
+  React.useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("design_options_tab").then((data) => setSchema(data));
+    });
+  }, []);
 
-  const filteredSizes = ALL_REINFORCEMENT_SIZES
-    .filter(s => s >= bounds.lower && s <= bounds.upper)
-    .map(s => `${s} mm`);
+  // Intercept the bounds button click from DynamicSchemaRenderer
+  const handleFieldChange = (fieldId: string, value: any) => {
+    if (fieldId === "reinforcement_bounds_btn_click") {
+      setShowBoundsDialog(true);
+      return;
+    }
+    updateField(fieldId, value);
+  };
+
+  const bounds: { lower: number; upper: number } = form.reinforcementBounds ?? { lower: 8, upper: 40 };
 
   const handleBoundsSave = (newBounds: { lower: number; upper: number }) => {
     updateField("reinforcementBounds", newBounds);
@@ -106,107 +112,18 @@ export default function DesignOptionsTab({ form, updateField }: DesignOptionsTab
   return (
     <TwoColumnLayout>
       <LeftColumn>
-        {/* Construction Stages */}
-        <SectionBox title="Construction Stages">
-          <div style={{
-            display: "grid", gridTemplateColumns: "1fr 150px",
-            rowGap: 12, columnGap: 30, alignItems: "center",
-          }}>
-            <Label>Include automatic</Label>
-            <Select
-              value={form.constructionStage ?? "Yes"}
-              onChange={e => updateField("constructionStage", e.target.value)}
-              options={CONSTRUCTION_STAGES}
-            />
-          </div>
-        </SectionBox>
-
-        {/* Deck Design */}
-        <SectionBox title="Deck Design">
-          <div style={{
-            display: "grid", gridTemplateColumns: "1fr 150px",
-            rowGap: 12, columnGap: 30, alignItems: "center",
-          }}>
-            <Label>Reinforcement Size</Label>
-            <button
-              onClick={() => setShowBoundsDialog(true)}
-              style={setBoundsBtn}
-            >
-              Set Bounds
-            </button>
-
-            <Label>Reinforcement Material</Label>
-            <Select
-              value={form.reinforcementMaterial ?? "Fe 500"}
-              onChange={e => updateField("reinforcementMaterial", e.target.value)}
-              options={REINFORCEMENT_MATERIALS}
-            />
-
-            <Label>Top Clear Cover (mm)</Label>
-            <Input
-              value={form.topClearCover ?? "50.0"}
-              onChange={e => updateField("topClearCover", e.target.value)}
-            />
-
-            <Label>Bottom Clear Cover (mm)</Label>
-            <Input
-              value={form.bottomClearCover ?? "40.0"}
-              onChange={e => updateField("bottomClearCover", e.target.value)}
-            />
-
-            <Label>Side Clear Cover (mm)</Label>
-            <Input
-              value={form.sideClearCover ?? "40.0"}
-              onChange={e => updateField("sideClearCover", e.target.value)}
-            />
-          </div>
-        </SectionBox>
-
-        {/* Shear Studs */}
-        <SectionBox title="Shear Studs">
-          <div style={{
-            display: "grid", gridTemplateColumns: "1fr 150px",
-            rowGap: 12, columnGap: 30, alignItems: "center",
-          }}>
-            <Label>Yield Strength (MPa)</Label>
-            <Input
-              value={form.shearStudYieldStrength ?? "385.00"}
-              onChange={e => updateField("shearStudYieldStrength", e.target.value)}
-            />
-
-            <Label>Ultimate Strength (MPa)</Label>
-            <Input
-              value={form.shearStudUltimateStrength ?? "495.00"}
-              onChange={e => updateField("shearStudUltimateStrength", e.target.value)}
-            />
-
-            <Label>Diameter (mm)</Label>
-            <Select
-              value={form.shearStudDiameter ?? "20"}
-              onChange={e => updateField("shearStudDiameter", e.target.value)}
-              options={SHEAR_STUD_DIAMETERS}
-            />
-
-            <Label>Height (mm)</Label>
-            <Input
-              value={form.shearStudHeight ?? "100.00"}
-              onChange={e => updateField("shearStudHeight", e.target.value)}
-            />
-
-            <Label>No. of Shear Studs per Section</Label>
-            <Select
-              value={form.shearStudCount ?? "2"}
-              onChange={e => updateField("shearStudCount", e.target.value)}
-              options={SHEAR_STUD_COUNTS}
-            />
-
-            <Label>Transverse Spacing (mm)</Label>
-            <Input
-              value={form.shearStudTransverseSpacing ?? "100.00"}
-              onChange={e => updateField("shearStudTransverseSpacing", e.target.value)}
-            />
-          </div>
-        </SectionBox>
+        {schema?.cards?.map((card: any, idx: number) => (
+          <SectionBox title={card.title} key={idx}>
+            {card.sections?.map((section: any, sIdx: number) => (
+              <DynamicSchemaRenderer
+                key={sIdx}
+                fields={section.fields}
+                data={form}
+                onChange={handleFieldChange}
+              />
+            ))}
+          </SectionBox>
+        ))}
       </LeftColumn>
 
       <DescriptionBox>

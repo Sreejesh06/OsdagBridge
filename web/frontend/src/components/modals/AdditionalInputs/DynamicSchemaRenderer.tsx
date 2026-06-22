@@ -186,6 +186,53 @@ export function DynamicSchemaRenderer({
                }
              }
            }
+        } else if (field.type === "button") {
+          inputElement = (
+            <button
+              type="button"
+              onClick={() => onChange(`${fieldId}_click`, true)}
+              style={{
+                padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer",
+                background: "#ffffff", border: "1px solid #a0a0a0", borderRadius: 4,
+                color: "#2a2a2a", height: 28, width: "100%"
+              }}
+              disabled={isFieldDisabled}
+            >
+              {field.text || field.label}
+            </button>
+          );
+        } else if (field.type === "number") {
+          inputElement = (
+            <Input
+              value={value ?? ""}
+              onChange={(e) => onChange(fieldId, e.target.value)}
+              disabled={isFieldDisabled}
+            />
+          );
+        } else if (field.row_fields) {
+          return (
+            <div key={field.id || fieldIdx} style={{ display: "flex", gap: 8, alignItems: "center", gridColumn: "span 2" }}>
+              {field.row_fields.map((rf: any, i: number) => {
+                if (rf.type === "label") {
+                  return <span key={i} style={{ fontSize: 12, fontWeight: 600, marginRight: rf.after_spacing ? 10 : 0 }}>{rf.label}</span>;
+                }
+                if (rf.type === "line" || rf.type === "number") {
+                  const rfId = rf.bind || rf.id;
+                  const rfValue = data[rfId] ?? rf.default ?? "";
+                  return (
+                    <Input
+                      key={i}
+                      value={rfValue}
+                      onChange={(e) => onChange(rfId, e.target.value)}
+                      disabled={disabled}
+                      style={{ width: rf.width || 150 }}
+                    />
+                  );
+                }
+                return null;
+              })}
+            </div>
+          );
         } else {
           // Fallback
           inputElement = (

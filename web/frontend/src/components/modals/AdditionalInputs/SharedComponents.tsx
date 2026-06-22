@@ -34,12 +34,14 @@ export function Input({
   disabled = false,
   placeholder = "",
   readOnly = false,
+  style,
 }: {
   value: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   placeholder?: string;
   readOnly?: boolean;
+  style?: React.CSSProperties;
 }) {
   return (
     <input
@@ -55,7 +57,7 @@ export function Input({
         padding: "0 8px", fontSize: 12,
         color: disabled ? "#666" : readOnly ? "#555" : "#000",
         outline: "none",
-        boxSizing: "border-box",
+        ...style,
       }}
     />
   );
@@ -66,11 +68,13 @@ export function Select({
   onChange,
   options,
   disabled = false,
+  style,
 }: {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: string[];
   disabled?: boolean;
+  style?: React.CSSProperties;
 }) {
   return (
     <select
@@ -84,7 +88,7 @@ export function Select({
         padding: "0 4px", fontSize: 12,
         color: disabled ? "#666" : "#000",
         outline: "none",
-        boxSizing: "border-box",
+        ...style,
       }}
     >
       {options.map(o => (
