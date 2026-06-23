@@ -1,5 +1,5 @@
-import React from "react";
-import { Label, Input, Select } from "../../SharedComponents";
+import React, { useState, useEffect } from "react";
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 
 interface RailingTabProps {
   form: any;
@@ -7,23 +7,27 @@ interface RailingTabProps {
 }
 
 export default function RailingTab({ form, updateField }: RailingTabProps) {
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("railing_tab").then((data) => setSchema(data));
+    });
+  }, []);
+
   return (
     <>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Railing Options:</div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 200px",
-        rowGap: 14, columnGap: 30, alignItems: "center",
-        maxWidth: 500,
-      }}>
-        <Label>Railing Type:</Label>
-        <Select value={form.railingType} onChange={e => updateField("railingType", e.target.value)} options={["IRC 5 - RCC Railing", "IRC 5 - Steel Railing"]} />
-
-        <Label>Railing Width (mm):</Label>
-        <Input value={form.railingWidth} onChange={e => updateField("railingWidth", e.target.value)} />
-
-        <Label>Railing Height (mm):</Label>
-        <Input value={form.railingHeight} onChange={e => updateField("railingHeight", e.target.value)} />
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Railing Inputs:</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {schema?.rows?.map((row: any, rIdx: number) => (
+          <DynamicSchemaRenderer
+            key={rIdx}
+            fields={row.fields}
+            data={form}
+            onChange={updateField}
+            gridStyle={row.fields.length > 1 ? { gridTemplateColumns: "180px 200px 100px 200px", columnGap: 24 } : { gridTemplateColumns: "180px 200px" }}
+          />
+        ))}
       </div>
     </>
   );

@@ -518,7 +518,7 @@ export default function CrossBracingDetailsTab({
 
         {/* Selection Box */}
         <div style={{ background: "#fff", border: "1px solid #cfcfcf", borderRadius: 8, padding: "10px 14px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", rowGap: 8, columnGap: 14, alignItems: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "160px 150px", rowGap: 8, columnGap: 14, alignItems: "center" }}>
             <NormalLabel>Select Girders:</NormalLabel>
             <Select
               value={selectedPair}

@@ -1,5 +1,5 @@
-import React from "react";
-import { Label, Input, Select } from "../../SharedComponents";
+import React, { useState, useEffect } from "react";
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 
 interface MedianTabProps {
   form: any;
@@ -7,23 +7,31 @@ interface MedianTabProps {
 }
 
 export default function MedianTab({ form, updateField }: MedianTabProps) {
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("median_tab").then((data) => setSchema(data));
+    });
+  }, []);
+
   return (
     <>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Median Options:</div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 200px",
-        rowGap: 14, columnGap: 30, alignItems: "center",
-        maxWidth: 500,
-      }}>
-        <Label>Include Median:</Label>
-        <input type="checkbox" checked={form.medianPresent} onChange={e => updateField("medianPresent", e.target.checked)} style={{ width: 18, height: 18 }} />
-
-        <Label>Median Width (mm):</Label>
-        <Input value={form.medianWidth} onChange={e => updateField("medianWidth", e.target.value)} disabled={!form.medianPresent} />
-
-        <Label>Median Type:</Label>
-        <Select value={form.medianType} onChange={e => updateField("medianType", e.target.value)} options={["Raised", "Flush"]} disabled={!form.medianPresent} />
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Median Inputs:</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {schema?.rows?.map((row: any, rIdx: number) => {
+          const filteredFields = row.fields.filter((f: any) => !f.id.includes("post_spacing"));
+          if (filteredFields.length === 0) return null;
+          return (
+            <DynamicSchemaRenderer
+              key={rIdx}
+              fields={filteredFields}
+              data={form}
+              onChange={updateField}
+              gridStyle={filteredFields.length > 1 ? { gridTemplateColumns: "180px 200px 100px 200px", columnGap: 24 } : { gridTemplateColumns: "180px 200px" }}
+            />
+          );
+        })}
       </div>
     </>
   );

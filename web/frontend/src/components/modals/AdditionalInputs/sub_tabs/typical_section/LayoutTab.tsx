@@ -1,5 +1,5 @@
-import React from "react";
-import { Label, Input } from "../../SharedComponents";
+import React, { useState, useEffect } from "react";
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 
 interface LayoutTabProps {
   form: any;
@@ -7,41 +7,27 @@ interface LayoutTabProps {
 }
 
 export default function LayoutTab({ form, updateField }: LayoutTabProps) {
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("layout_tab").then((data) => setSchema(data));
+    });
+  }, []);
+
   return (
     <>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Layout Parameters:</div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 200px 1fr 200px",
-        rowGap: 14, columnGap: 30, alignItems: "center",
-      }}>
-        <Label>Girder Spacing (m):</Label>
-        <Input value={form.girderSpacing} onChange={e => updateField("girderSpacing", e.target.value)} />
-
-        <Label>No. of Girders:</Label>
-        <Input value={form.noOfGirders} onChange={e => updateField("noOfGirders", e.target.value)} />
-
-        <Label>Deck Overhang Width (m):</Label>
-        <Input value={form.deckOverhangWidth} onChange={e => updateField("deckOverhangWidth", e.target.value)} />
-
-        <div style={{ fontSize: 12, fontStyle: "italic", color: "#666" }}>Values adjusted for:</div>
-        <div />
-
-        <Label>Overall Bridge Width (m):</Label>
-        <Input value={form.overallBridgeWidth} onChange={e => updateField("overallBridgeWidth", e.target.value)} />
-
-        <div /><div />
-
-        <Label>Deck Thickness (mm):</Label>
-        <Input value={form.deckThickness} onChange={e => updateField("deckThickness", e.target.value)} />
-
-        <div /><div />
-
-        <Label>Footpath Thickness (mm):</Label>
-        <Input value={form.footpathThickness} onChange={e => updateField("footpathThickness", e.target.value)} />
-
-        <Label>Footpath Width (m):</Label>
-        <Input value={form.footpathWidth} onChange={e => updateField("footpathWidth", e.target.value)} />
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Inputs:</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {schema?.rows?.map((row: any, rIdx: number) => (
+          <DynamicSchemaRenderer
+            key={rIdx}
+            fields={row.fields}
+            data={form}
+            onChange={updateField}
+            gridStyle={row.fields.length > 1 ? { gridTemplateColumns: "180px 180px 140px 180px", columnGap: 24 } : { gridTemplateColumns: "180px 180px" }}
+          />
+        ))}
       </div>
     </>
   );

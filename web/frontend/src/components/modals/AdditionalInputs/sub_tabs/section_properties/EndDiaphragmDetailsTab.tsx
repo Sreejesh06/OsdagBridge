@@ -911,7 +911,7 @@ export default function EndDiaphragmDetailsTab({
         <div style={{ fontSize: 12, fontWeight: 700, color: "#4b4b4b", marginBottom: 12 }}>
           Section Properties:
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", rowGap: 10, columnGap: 16, alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "170px 150px", rowGap: 10, columnGap: 16, alignItems: "center" }}>
           {items.map((item, idx) => (
             <Fragment key={idx}>
               <div style={{ fontSize: 10, color: "#5a5a5a" }}>{item.label}</div>
@@ -1079,7 +1079,7 @@ export default function EndDiaphragmDetailsTab({
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
         {/* Selection Box */}
         <div style={{ background: "#fff", border: "1px solid #cfcfcf", borderRadius: 8, padding: "10px 14px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", rowGap: 8, columnGap: 14, alignItems: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "160px 150px", rowGap: 8, columnGap: 14, alignItems: "center" }}>
             <NormalLabel>Select Girders:</NormalLabel>
             <Select
               value={selectedPair}
@@ -1095,7 +1095,7 @@ export default function EndDiaphragmDetailsTab({
         <div style={{ background: "#fff", border: "1px solid #cfcfcf", borderRadius: 8, padding: "10px 14px", flex: 1 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#4b4b4b", marginBottom: 10 }}>Section Inputs:</div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", rowGap: 8, columnGap: 14, alignItems: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "160px 150px", rowGap: 8, columnGap: 14, alignItems: "center" }}>
             <NormalLabel>Type:</NormalLabel>
             <Select
               value={activeType}

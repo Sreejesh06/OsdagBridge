@@ -10,6 +10,7 @@ interface DynamicSchemaRendererProps {
   errors?: Record<string, React.ReactNode>;
   placeholders?: Record<string, string>;
   isOptimizedMode?: boolean;
+  gridStyle?: React.CSSProperties;
 }
 
 export function DynamicSchemaRenderer({
@@ -21,11 +22,12 @@ export function DynamicSchemaRenderer({
   errors = {},
   placeholders = {},
   isOptimizedMode = false,
+  gridStyle,
 }: DynamicSchemaRendererProps) {
   if (!fields || fields.length === 0) return null;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: "10px 14px", alignItems: "center" }}>
+    <div style={{ display: "grid", gridTemplateColumns: gridStyle?.gridTemplateColumns || "160px minmax(150px, max-content)", gap: "10px 14px", alignItems: "center", ...gridStyle }}>
       {fields.map((field: any, fieldIdx: number) => {
         const fieldId = field.bind || field.id;
         let value = data[fieldId];
@@ -132,7 +134,65 @@ export function DynamicSchemaRenderer({
            const textValue = data[valueId] ?? "";
 
            // If it has bind_value, it expects the pair layout (like in Loading tabs)
-           if (field.bind_value) {
+           if (field.thickness_key || field.type === "mode_value") {
+             const isWelded = (data["type_combo"] || "Welded").toLowerCase() === "welded";
+             const isOptimized = isOptimizedMode;
+             
+             if (isOptimized) {
+               if (field.type === "mode_value") {
+                 inputElement = (
+                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                     <Select
+                       value={modeValue}
+                       onChange={(e) => {
+                         onChange(modeId, e.target.value);
+                         if (e.target.value === "Custom" && !textValue) {
+                           onChange(valueId, "12");
+                         }
+                       }}
+                       options={field.mode_choices || ["All", "Custom"]}
+                       disabled={isFieldDisabled || !isWelded}
+                       style={{ width: field.mode_width || 180 }}
+                     />
+                     {modeValue === "Custom" && (
+                       <Select
+                         value={textValue || "12"}
+                         onChange={(e) => onChange(valueId, e.target.value)}
+                         options={data.thickness_values_mm || ["8", "10", "12", "14", "16", "18", "20", "22", "25", "28", "32", "36", "40", "45", "50", "56", "63", "75", "80", "90", "100", "110", "120"]}
+                         disabled={isFieldDisabled || !isWelded}
+                         style={{ width: field.value_width || 180 }}
+                       />
+                     )}
+                   </div>
+                 );
+               } else {
+                 // Optimized mode: Show ONLY the mode selection (All / Custom)
+                 inputElement = (
+                   <Select
+                      value={modeValue}
+                      onChange={(e) => onChange(modeId, e.target.value)}
+                      options={field.mode_choices || ["All", "Custom"]}
+                      disabled={isFieldDisabled || !isWelded}
+                      style={{ width: field.mode_width || 180 }}
+                   />
+                 );
+               }
+             } else {
+               // Custom mode: Show ONLY the SAIL values dropdown
+               const valueChoices = data.thickness_values_mm || ["8", "10", "12", "14", "16", "18", "20", "22", "25", "28", "32", "36", "40", "45", "50", "56", "63", "75", "80", "90", "100", "110", "120"];
+               // Ensure mode is set to 'Custom' in the background if it isn't already,
+               // but we just render the value dropdown here.
+               inputElement = (
+                 <Select
+                    value={textValue}
+                    onChange={(e) => onChange(valueId, e.target.value)}
+                    options={valueChoices}
+                    disabled={isFieldDisabled || !isWelded}
+                    style={{ width: field.value_width || 180 }}
+                 />
+               );
+             }
+           } else if (field.bind_value) {
              const isValueDisabled = isFieldDisabled || (modeValue !== "Custom" && modeValue !== "User-defined");
              inputElement = (
                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -154,8 +214,9 @@ export function DynamicSchemaRenderer({
              );
            } else {
              // Standard layout (like in Member Properties tabs)
-             if (disabled || isOptimizedMode) {
-               // Optimized mode: Show the mode selection
+             const isOptimized = isOptimizedMode;
+             
+             if (isOptimized) {
                inputElement = (
                  <Select
                     value={modeValue}

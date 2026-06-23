@@ -545,22 +545,40 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
     setForm((prev: Record<string, any>) => ({
       ...prev,
       // Typical Section
-      girderSpacing:      String(bridgeData.girder_spacing      ?? "4"),
-      noOfGirders:        String(bridgeData.no_of_girders       ?? "4"),
-      deckOverhangWidth:  String(bridgeData.deck_overhang_width ?? "1"),
-      overallBridgeWidth: String(bridgeData.overall_bridge_width ?? "12"),
-      deckThickness:      String(bridgeData.deck_thickness      ?? "250"),
-      footpathThickness:  String(bridgeData.footpath_thickness  ?? "150"),
-      footpathWidth:      String(bridgeData.footpath_width      ?? "1.5"),
-      crashBarrierWidth:  String(bridgeData.crash_barrier_width ?? "500"),
-      crashBarrierType:   String(bridgeData.crash_barrier_type  ?? "PL-1"),
-      railingType:        String(bridgeData.railing_type        ?? "IRC 5 - RCC Railing"),
-      railingWidth:       String(bridgeData.railing_width       ?? "375"),
-      railingHeight:      String(bridgeData.railing_height      ?? "1000"),
-      medianPresent:      Boolean(bridgeData.median_present     ?? false),
-      medianWidth:        String(bridgeData.median_width        ?? "1200"),
-      medianType:         String(bridgeData.median_type         ?? "Raised"),
-      wearingCourseThickness: String(bridgeData.wearing_course_thickness ?? "50"),
+      girder_spacing:      String(bridgeData.girder_spacing      ?? "4"),
+      no_of_girders:        String(bridgeData.no_of_girders       ?? "4"),
+      deck_overhang:  String(bridgeData.deck_overhang_width ?? "1"),
+      overall_bridge_width_display: String(bridgeData.overall_bridge_width ?? "12"),
+      deck_thickness:      String(bridgeData.deck_thickness      ?? "250"),
+      footpath_thickness:  String(bridgeData.footpath_thickness  ?? "150"),
+      footpath_width:      String(bridgeData.footpath_width      ?? "1.5"),
+
+      crash_barrier_width:  String(bridgeData.crash_barrier_width ?? "500"),
+      crash_barrier_type:   String(bridgeData.crash_barrier_type  ?? "PL-1"),
+      crash_barrier_density: String(bridgeData.crash_barrier_density ?? "24"),
+      crash_barrier_height: String(bridgeData.crash_barrier_height ?? "1.0"),
+      crash_barrier_area: String(bridgeData.crash_barrier_area ?? "0.5"),
+      crash_barrier_load: String(bridgeData.crash_barrier_load ?? "12"),
+      crash_barrier_post_spacing: String(bridgeData.crash_barrier_post_spacing ?? "1"),
+
+      railing_type:        String(bridgeData.railing_type        ?? "IRC 5 - RCC Railing"),
+      railing_width:       String(bridgeData.railing_width       ?? "375"),
+      railing_height:      String(bridgeData.railing_height      ?? "1000"),
+      railing_load_mode:   "Automatic (IRC 6)",
+      railing_load_value:  "",
+
+      median_width:        String(bridgeData.median_width        ?? "1200"),
+      median_type:         String(bridgeData.median_type         ?? "Raised"),
+      median_density:      String(bridgeData.median_density ?? "24"),
+      median_height:       "0.5",
+      median_area:         "0.6",
+      median_load:         "14.4",
+      median_post_spacing: "1",
+
+      wearing_material:    String(bridgeData.wearing_course_type ?? "Asphalt"),
+      wearing_density:     "22",
+      wearing_thickness: String(bridgeData.wearing_course_thickness ?? "50"),
+      lane_count_combo:    "3",
 
       // Loading
       self_weight_factor_input: String((bridgeData as any).self_weight_factor ?? "1.00"),
@@ -912,23 +930,39 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
 
     const updatedData = {
       ...bridgeData,
-      girder_spacing:       Number(form.girderSpacing),
-      no_of_girders:        Number(form.noOfGirders),
-      deck_overhang_width:  Number(form.deckOverhangWidth),
-      overall_bridge_width: Number(form.overallBridgeWidth),
-      deck_thickness:       Number(form.deckThickness),
-      footpath_thickness:   Number(form.footpathThickness),
-      footpath_width:       Number(form.footpathWidth),
+      girder_spacing:       Number(form.girder_spacing),
+      no_of_girders:        Number(form.no_of_girders),
+      deck_overhang_width:  Number(form.deck_overhang),
+      overall_bridge_width: Number(form.overall_bridge_width_display),
+      deck_thickness:       Number(form.deck_thickness),
+      footpath_thickness:   Number(form.footpath_thickness),
+      footpath_width:       Number(form.footpath_width),
 
-      crash_barrier_width:  Number(form.crashBarrierWidth),
-      crash_barrier_type:   form.crashBarrierType,
-      railing_type:         form.railingType,
-      railing_width:        Number(form.railingWidth),
-      railing_height:       Number(form.railingHeight),
-      median_present:       form.medianPresent,
-      median_width:         Number(form.medianWidth),
-      median_type:          form.medianType,
-      wearing_course_thickness: Number(form.wearingCourseThickness),
+      crash_barrier_width:  Number(form.crash_barrier_width),
+      crash_barrier_type:   form.crash_barrier_type,
+      crash_barrier_density: Number(form.crash_barrier_density),
+      crash_barrier_height: Number(form.crash_barrier_height),
+      crash_barrier_area:   Number(form.crash_barrier_area),
+      crash_barrier_load:   Number(form.crash_barrier_load),
+      crash_barrier_post_spacing: Number(form.crash_barrier_post_spacing),
+
+      railing_type:         form.railing_type,
+      railing_width:        Number(form.railing_width),
+      railing_height:       Number(form.railing_height),
+      railing_load_mode:    form.railing_load_mode,
+      railing_load_value:   Number(form.railing_load_value),
+
+      median_present:       form.median_type && form.median_type !== "None" ? true : false,
+      median_width:         Number(form.median_width),
+      median_type:          form.median_type,
+      median_density:       Number(form.median_density),
+      median_height:        Number(form.median_height),
+      median_area:          Number(form.median_area),
+      median_load:          Number(form.median_load),
+      median_post_spacing:  Number(form.median_post_spacing),
+
+      wearing_course_type:  form.wearing_material,
+      wearing_course_thickness: Number(form.wearing_thickness),
 
       member_properties:    serializeMemberProperties(memberProps),
 
@@ -1018,7 +1052,7 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
         case 4:
           return <WearingCourseTab form={form} updateField={updateField} />;
         case 5:
-          return <LaneDetailsTab form={form} />;
+          return <LaneDetailsTab form={form} updateField={updateField} />;
         default:
           return null;
       }
@@ -1205,18 +1239,25 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
 
             {/* LOWER TABS */}
             {getBottomTabs().length > 0 && (
-              <div style={{ display: "flex", margin: "0 14px", border: "1px solid #555" }}>
+              <div style={{ display: "flex", justifyContent: "center", margin: "14px 14px 0 14px", borderBottom: "1px solid #dcdcdc" }}>
                 {getBottomTabs().map((tab, i) => (
                   <div
                     key={tab}
                     onClick={() => setActiveBottomTabIndex(i)}
                     style={{
-                      flex: 1, padding: 8, textAlign: "center",
-                      borderRight: i !== getBottomTabs().length - 1 ? "1px solid #555" : "none",
-                      background: i === activeBottomTabIndex ? GREEN : "#ececec",
+                      padding: "8px 24px", textAlign: "center",
+                      borderTop: "1px solid #dcdcdc",
+                      borderLeft: "1px solid #dcdcdc",
+                      borderRight: i === getBottomTabs().length - 1 ? "1px solid #dcdcdc" : "none",
+                      borderBottom: i === activeBottomTabIndex ? "1px solid #ffffff" : "1px solid #dcdcdc",
+                      marginBottom: i === activeBottomTabIndex ? -1 : 0,
+                      background: i === activeBottomTabIndex ? "#8cc63f" : "#e2e2e2",
                       color: i === activeBottomTabIndex ? "white" : "#555",
+                      fontWeight: i === activeBottomTabIndex ? 700 : 600,
                       fontSize: 12,
                       cursor: "pointer",
+                      borderTopLeftRadius: 3, borderTopRightRadius: 3,
+                      marginRight: 0,
                     }}
                   >
                     {tab}
@@ -1227,8 +1268,9 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
 
             {/* FORM */}
             <div style={{
-              flex: 1, margin: 14, border: "1px solid #555",
-              borderRadius: 12, background: "#f7f7f7", padding: "18px 24px",
+              flex: 1, margin: getBottomTabs().length > 0 ? "0 14px 14px 14px" : "14px",
+              border: "1px solid #dcdcdc", borderTop: "none",
+              background: "#ffffff", padding: "12px 16px",
               overflowY: "auto",
             }}>
               {renderTabContent()}

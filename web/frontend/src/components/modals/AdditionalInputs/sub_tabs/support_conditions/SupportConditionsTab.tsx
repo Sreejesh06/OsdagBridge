@@ -23,7 +23,7 @@ export default function SupportConditionsTab({ form, updateField }: SupportCondi
         <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 10 }}>Support Conditions:</div>
         <div style={{
           display: "grid",
-          gridTemplateColumns: "160px 200px",
+          gridTemplateColumns: "160px 150px",
           rowGap: 12, columnGap: 30, alignItems: "center",
           maxWidth: 440,
         }}>
@@ -51,7 +51,7 @@ export default function SupportConditionsTab({ form, updateField }: SupportCondi
         <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 10 }}>Bearing Length:</div>
         <div style={{
           display: "grid",
-          gridTemplateColumns: "220px 200px",
+          gridTemplateColumns: "220px 150px",
           rowGap: 12, columnGap: 30, alignItems: "center",
           maxWidth: 480,
         }}>

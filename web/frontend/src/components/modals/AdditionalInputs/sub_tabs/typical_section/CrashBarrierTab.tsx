@@ -1,5 +1,5 @@
-import React from "react";
-import { Label, Input, Select } from "../../SharedComponents";
+import React, { useState, useEffect } from "react";
+import { DynamicSchemaRenderer } from "../../DynamicSchemaRenderer";
 
 interface CrashBarrierTabProps {
   form: any;
@@ -7,20 +7,31 @@ interface CrashBarrierTabProps {
 }
 
 export default function CrashBarrierTab({ form, updateField }: CrashBarrierTabProps) {
+  const [schema, setSchema] = useState<any>(null);
+
+  useEffect(() => {
+    import("../../../../../services/schemaService").then((service) => {
+      service.getSchema("crash_barrier_tab").then((data) => setSchema(data));
+    });
+  }, []);
+
   return (
     <>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Crash Barrier Options:</div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 200px",
-        rowGap: 14, columnGap: 30, alignItems: "center",
-        maxWidth: 500,
-      }}>
-        <Label>Crash Barrier Width (mm):</Label>
-        <Input value={form.crashBarrierWidth} onChange={e => updateField("crashBarrierWidth", e.target.value)} />
-
-        <Label>Crash Barrier Type:</Label>
-        <Select value={form.crashBarrierType} onChange={e => updateField("crashBarrierType", e.target.value)} options={["PL-1", "PL-2", "PL-3"]} />
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15 }}>Crash Barrier Inputs:</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {schema?.rows?.map((row: any, rIdx: number) => {
+          const filteredFields = row.fields.filter((f: any) => !f.id.includes("post_spacing"));
+          if (filteredFields.length === 0) return null;
+          return (
+            <DynamicSchemaRenderer
+              key={rIdx}
+              fields={filteredFields}
+              data={form}
+              onChange={updateField}
+              gridStyle={filteredFields.length > 1 ? { gridTemplateColumns: "180px 200px 100px 200px", columnGap: 24 } : { gridTemplateColumns: "180px 200px" }}
+            />
+          );
+        })}
       </div>
     </>
   );

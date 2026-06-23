@@ -633,7 +633,7 @@ export default function GirderDetailsTab({
         <div style={{ fontSize: 12, fontWeight: 700, color: "#4b4b4b", marginBottom: 12 }}>
           Section Properties:
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", rowGap: 10, columnGap: 16, alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "170px 150px", rowGap: 10, columnGap: 16, alignItems: "center" }}>
           {items.map((item, idx) => (
             <Fragment key={idx}>
               <div style={{ fontSize: 11, color: "#2f2f2f", fontWeight: 600 }}>{item.label}</div>
@@ -885,7 +885,7 @@ export default function GirderDetailsTab({
         gap: 12,
         boxSizing: "border-box"
       }}>
-        <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "160px 150px", rowGap: 10, columnGap: 14, alignItems: "center" }}>
           <Label>Select Girder:</Label>
           <Select
             value={selectedGirder}
@@ -1062,7 +1062,8 @@ export default function GirderDetailsTab({
 
         {schema ? (
           <DynamicSchemaRenderer
-            fields={schema.section_inputs || []}
+            isOptimizedMode={(girderDetails.design || "Optimized") === "Optimized"}
+            fields={(schema.section_inputs || []).filter((f: any) => f.id !== "design")}
             data={{
               ...girderDetails,
               ...currentSegment,

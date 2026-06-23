@@ -2,7 +2,7 @@ import React from "react";
 import { GIRDER_DISPLAY_MAP } from "../../constants/memberConstants";
 
 export function Label({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 12, fontWeight: 600, color: "#2f2f2f", background: "transparent" }}>{children}</div>;
+  return <div style={{ fontSize: 13, fontWeight: 400, color: "#2f2f2f", background: "transparent" }}>{children}</div>;
 }
 
 export function Checkbox({ checked, onChange, disabled }: { checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean }) {
@@ -52,7 +52,7 @@ export function Input({
       placeholder={placeholder}
       style={{
         width: "100%", height: 28,
-        borderRadius: 6, border: "1px solid #070707",
+        borderRadius: 4, border: "1px solid #a0a0a0",
         background: disabled ? "#f1f1f1" : readOnly ? "#f6f6f6" : "#ffffff",
         padding: "0 8px", fontSize: 12,
         color: disabled ? "#666" : readOnly ? "#555" : "#000",
@@ -83,7 +83,7 @@ export function Select({
       disabled={disabled}
       style={{
         width: "100%", height: 28,
-        borderRadius: 5, border: "1px solid #000000",
+        borderRadius: 4, border: "1px solid #a0a0a0",
         background: disabled ? "#f1f1f1" : "#ffffff",
         padding: "0 4px", fontSize: 12,
         color: disabled ? "#666" : "#000",

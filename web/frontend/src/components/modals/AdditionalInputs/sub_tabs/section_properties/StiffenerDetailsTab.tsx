@@ -518,7 +518,7 @@ export default function StiffenerDetailsTab({
           {/* Header: Select Member + Apply button */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: "240px 1fr",
+            gridTemplateColumns: "160px 150px",
             rowGap: 8,
             columnGap: 14,
             alignItems: "center",
@@ -560,6 +560,7 @@ export default function StiffenerDetailsTab({
           <div style={{ marginTop: 10 }}>
             {schema ? (
               <DynamicSchemaRenderer
+                isOptimizedMode={isOptimized}
                 fields={(schema.stiffener_inputs || []).filter((f: any) => 
                   isExterior || !f.id.startsWith("bearing_")
                 )}
@@ -589,10 +590,10 @@ export default function StiffenerDetailsTab({
                 errors={{
                   bearing_outstand_input: !isBearingOutstandValid 
                     ? `Exceeds maximum outstand of ${computedOutstand} mm` 
-                    : (computedOutstand ? <span style={{ color: "#888" }}>Max allowed outstand: {computedOutstand} mm</span> : undefined),
+                    : undefined,
                   intermediate_outstand_input: (String(stiff.intermediate_stiffener ?? "") === "Yes" && !isInterOutstandValid)
                     ? `Exceeds maximum outstand of ${computedOutstand} mm`
-                    : ((String(stiff.intermediate_stiffener ?? "") === "Yes" && computedOutstand) ? <span style={{ color: "#888" }}>Max allowed outstand: {computedOutstand} mm</span> : undefined),
+                    : undefined,
                 }}
                 onChange={(fieldId, value) => {
                   if (fieldId === "bearing_count_combo") updateStiffenerField(selectedStiffenerMember, "bearing_stiffeners_each_end", value);
@@ -636,6 +637,7 @@ export default function StiffenerDetailsTab({
           <div style={{ marginTop: 10 }}>
             {schema ? (
               <DynamicSchemaRenderer
+                isOptimizedMode={isOptimized}
                 fields={schema.web_buckling_inputs || []}
                 data={{
                   method_combo: stiff.shear_buckling_method ?? ""
