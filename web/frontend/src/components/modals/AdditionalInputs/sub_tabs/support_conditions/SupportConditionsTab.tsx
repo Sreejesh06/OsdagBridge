@@ -1,5 +1,8 @@
 import React from "react";
 import { Label, Input, Select } from "../../SharedComponents";
+import { useBridgeStore } from "../../../../../store/bridgeStore";
+import SupportCADWidget from "./SupportCADWidget";
+import SupportDetailCADWidget from "./SupportDetailCADWidget";
 
 const SUPPORT_TYPES = ["Fixed", "Pinned", "Roller"];
 
@@ -10,6 +13,13 @@ interface SupportConditionsTabProps {
 
 export default function SupportConditionsTab({ form, updateField }: SupportConditionsTabProps) {
   const bearingLength = form.bearingLength ?? "400";
+  const bridgeInput = useBridgeStore((state) => state.bridgeInput);
+
+  // Parse bridge dimensions
+  const spanLength = parseFloat(String(bridgeInput?.span_length || "35"));
+  const numGirders = parseInt(String(bridgeInput?.num_girders || "4"), 10);
+  const girderSpacing = parseFloat(String(bridgeInput?.girder_spacing || "2.75"));
+  const bracingSpacing = parseFloat(String(bridgeInput?.cross_bracing_spacing || "3.5"));
 
   return (
     <>
@@ -64,69 +74,25 @@ export default function SupportConditionsTab({ form, updateField }: SupportCondi
         </div>
       </div>
 
-      {/* CAD Diagram Placeholder */}
+      {/* CAD Diagram Section */}
       <div style={{
         border: "1px solid #ccc", borderRadius: 8,
-        background: "#fff", padding: "14px 18px",
-        minHeight: 180, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        background: "#fff", padding: "10px",
+        display: "flex", gap: "10px",
       }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 10 }}>Support Condition Diagram</div>
-        <div style={{ display: "flex", gap: 40, alignItems: "flex-end", justifyContent: "center" }}>
-          {/* Left support */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{
-              width: 60, height: 8, background: "#555",
-              borderRadius: 2,
-            }} />
-            {(form.leftSupport ?? "Pinned") === "Pinned" ? (
-              <svg width="40" height="30" viewBox="0 0 40 30">
-                <polygon points="20,0 0,28 40,28" fill="#555" />
-                <line x1="0" y1="30" x2="40" y2="30" stroke="#555" strokeWidth="2" />
-              </svg>
-            ) : (
-              <svg width="40" height="30" viewBox="0 0 40 30">
-                <rect x="5" y="0" width="30" height="20" fill="#555" rx="2" />
-                <circle cx="20" cy="25" r="5" fill="#555" />
-                <line x1="0" y1="30" x2="40" y2="30" stroke="#555" strokeWidth="2" />
-              </svg>
-            )}
-            <div style={{ fontSize: 10, color: "#666" }}>{form.leftSupport ?? "Pinned"}</div>
-          </div>
+        {/* Left CAD (Top View) */}
+        <div style={{ flex: 1, height: 280, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #eee", borderRadius: 6, overflow: "hidden" }}>
+          <SupportCADWidget
+            spanLength={spanLength}
+            numGirders={numGirders}
+            girderSpacing={girderSpacing}
+            bracingSpacing={bracingSpacing}
+          />
+        </div>
 
-          {/* Girder beam */}
-          <div style={{
-            flex: 1, height: 12, background: "#8a8a8a",
-            borderRadius: 3, maxWidth: 200, position: "relative",
-            marginBottom: 24,
-            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-          }}>
-            <div style={{
-              position: "absolute", top: -18, left: "50%", transform: "translateX(-50%)",
-              fontSize: 10, color: "#444", whiteSpace: "nowrap", fontStyle: "italic",
-            }}>
-              Bearing: {bearingLength}mm
-            </div>
-          </div>
-
-          {/* Right support */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 60, height: 8, background: "#555", borderRadius: 2 }} />
-            {(form.rightSupport ?? "Roller") === "Roller" ? (
-              <svg width="40" height="30" viewBox="0 0 40 30">
-                <polygon points="20,0 0,20 40,20" fill="#555" />
-                <circle cx="10" cy="26" r="4" fill="#555" />
-                <circle cx="30" cy="26" r="4" fill="#555" />
-                <line x1="0" y1="30" x2="40" y2="30" stroke="#555" strokeWidth="2" />
-              </svg>
-            ) : (
-              <svg width="40" height="30" viewBox="0 0 40 30">
-                <rect x="5" y="0" width="30" height="20" fill="#555" rx="2" />
-                <circle cx="20" cy="25" r="5" fill="#555" />
-                <line x1="0" y1="30" x2="40" y2="30" stroke="#555" strokeWidth="2" />
-              </svg>
-            )}
-            <div style={{ fontSize: 10, color: "#666" }}>{form.rightSupport ?? "Roller"}</div>
-          </div>
+        {/* Right CAD (Side Bearing Detail) */}
+        <div style={{ flex: 1, height: 280, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #eee", borderRadius: 6, overflow: "hidden" }}>
+          <SupportDetailCADWidget bearingLength={parseFloat(bearingLength)} />
         </div>
       </div>
     </>
