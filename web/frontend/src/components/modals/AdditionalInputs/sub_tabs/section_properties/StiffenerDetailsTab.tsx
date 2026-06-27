@@ -566,57 +566,57 @@ export default function StiffenerDetailsTab({
                 )}
                 data={{
                   ...stiff,
-                  bearing_count_combo: stiff.bearing_stiffeners_each_end ?? "",
-                  bearing_spacing_input: stiff.bearing_spacing_mm ?? "",
+                  bearing_stiffeners_each_end: stiff.bearing_stiffeners_each_end ?? "",
+                  bearing_spacing_mm: stiff.bearing_spacing_mm ?? "",
                   bearing_thick_combo: stiff.bearing_thickness,
                   bearing_thick_value_combo: stiff.bearing_thickness_value,
-                  bearing_outstand_input: stiff.bearing_outstand_mm ?? "",
-                  intermediate_combo: stiff.intermediate_stiffener ?? "",
-                  intermediate_spacing_input: stiff.intermediate_spacing_mm ?? "",
+                  bearing_outstand_mm: stiff.bearing_outstand_mm ?? "",
+                  intermediate_stiffener: stiff.intermediate_stiffener ?? "",
+                  intermediate_spacing_mm: stiff.intermediate_spacing_mm ?? "",
                   intermediate_thick_combo: stiff.intermediate_thickness,
                   intermediate_thick_value_combo: stiff.intermediate_thickness_value,
-                  intermediate_outstand_input: stiff.intermediate_outstand_mm ?? "",
-                  longitudinal_combo: stiff.longitudinal_stiffener ?? "",
+                  intermediate_outstand_mm: stiff.intermediate_outstand_mm ?? "",
+                  longitudinal_stiffener: stiff.longitudinal_stiffener ?? "",
                   long_thick_combo: stiff.longitudinal_thickness,
                   long_thick_value_combo: stiff.longitudinal_thickness_value,
                   thickness_values_mm: SAIL_APPROVED_THICKNESS_VALUES,
                 }}
                 placeholders={{
-                  bearing_spacing_input: isOptimized ? "" : `Auto (${autoBearingSpacingMm} mm)`,
-                  bearing_outstand_input: computedOutstand ?? "NA",
-                  intermediate_spacing_input: "NA",
-                  intermediate_outstand_input: computedOutstand ?? "NA",
+                  bearing_spacing_mm: isOptimized ? "" : `Auto (${autoBearingSpacingMm} mm)`,
+                  bearing_outstand_mm: computedOutstand ?? "NA",
+                  intermediate_spacing_mm: "NA",
+                  intermediate_outstand_mm: computedOutstand ?? "NA",
                 }}
                 errors={{
-                  bearing_outstand_input: !isBearingOutstandValid 
+                  bearing_outstand_mm: !isBearingOutstandValid 
                     ? `Exceeds maximum outstand of ${computedOutstand} mm` 
                     : undefined,
-                  intermediate_outstand_input: (String(stiff.intermediate_stiffener ?? "") === "Yes" && !isInterOutstandValid)
+                  intermediate_outstand_mm: (String(stiff.intermediate_stiffener ?? "") === "Yes" && !isInterOutstandValid)
                     ? `Exceeds maximum outstand of ${computedOutstand} mm`
                     : undefined,
                 }}
                 onChange={(fieldId, value) => {
-                  if (fieldId === "bearing_count_combo") updateStiffenerField(selectedStiffenerMember, "bearing_stiffeners_each_end", value);
-                  else if (fieldId === "bearing_spacing_input") updateStiffenerField(selectedStiffenerMember, "bearing_spacing_mm", value);
+                  if (fieldId === "bearing_stiffeners_each_end") updateStiffenerField(selectedStiffenerMember, "bearing_stiffeners_each_end", value);
+                  else if (fieldId === "bearing_spacing_mm") updateStiffenerField(selectedStiffenerMember, "bearing_spacing_mm", value);
                   else if (fieldId === "bearing_thick_combo") updateStiffenerField(selectedStiffenerMember, "bearing_thickness", value);
                   else if (fieldId === "bearing_thick_value_combo") {
                     if (!isOptimized) updateStiffenerField(selectedStiffenerMember, "bearing_thickness", "Custom");
                     updateStiffenerField(selectedStiffenerMember, "bearing_thickness_value", value);
                   }
-                  else if (fieldId === "bearing_outstand_input") updateStiffenerField(selectedStiffenerMember, "bearing_outstand_mm", value);
-                  else if (fieldId === "intermediate_combo") {
+                  else if (fieldId === "bearing_outstand_mm") updateStiffenerField(selectedStiffenerMember, "bearing_outstand_mm", value);
+                  else if (fieldId === "intermediate_stiffener") {
                     updateStiffenerField(selectedStiffenerMember, "intermediate_stiffener", value);
                     if (value === "No") updateStiffenerField(selectedStiffenerMember, "intermediate_spacing_mm", "NA");
                     else if (String(stiff.intermediate_spacing_mm ?? "").toUpperCase() === "NA") updateStiffenerField(selectedStiffenerMember, "intermediate_spacing_mm", "");
                   }
-                  else if (fieldId === "intermediate_spacing_input") updateStiffenerField(selectedStiffenerMember, "intermediate_spacing_mm", value);
+                  else if (fieldId === "intermediate_spacing_mm") updateStiffenerField(selectedStiffenerMember, "intermediate_spacing_mm", value);
                   else if (fieldId === "intermediate_thick_combo") updateStiffenerField(selectedStiffenerMember, "intermediate_thickness", value);
                   else if (fieldId === "intermediate_thick_value_combo") {
                     if (!isOptimized) updateStiffenerField(selectedStiffenerMember, "intermediate_thickness", "Custom");
                     updateStiffenerField(selectedStiffenerMember, "intermediate_thickness_value", value);
                   }
-                  else if (fieldId === "intermediate_outstand_input") updateStiffenerField(selectedStiffenerMember, "intermediate_outstand_mm", value);
-                  else if (fieldId === "longitudinal_combo") updateStiffenerField(selectedStiffenerMember, "longitudinal_stiffener", value);
+                  else if (fieldId === "intermediate_outstand_mm") updateStiffenerField(selectedStiffenerMember, "intermediate_outstand_mm", value);
+                  else if (fieldId === "longitudinal_stiffener") updateStiffenerField(selectedStiffenerMember, "longitudinal_stiffener", value);
                   else if (fieldId === "long_thick_combo") updateStiffenerField(selectedStiffenerMember, "longitudinal_thickness", value);
                   else if (fieldId === "long_thick_value_combo") {
                     if (!isOptimized) updateStiffenerField(selectedStiffenerMember, "longitudinal_thickness", "Custom");
@@ -640,10 +640,10 @@ export default function StiffenerDetailsTab({
                 isOptimizedMode={isOptimized}
                 fields={schema.web_buckling_inputs || []}
                 data={{
-                  method_combo: stiff.shear_buckling_method ?? ""
+                  shear_buckling_method: stiff.shear_buckling_method ?? ""
                 }}
                 onChange={(fieldId, value) => {
-                  if (fieldId === "method_combo") updateStiffenerField(selectedStiffenerMember, "shear_buckling_method", value);
+                  if (fieldId === "shear_buckling_method") updateStiffenerField(selectedStiffenerMember, "shear_buckling_method", value);
                 }}
                 disabled={isOptimized}
               />

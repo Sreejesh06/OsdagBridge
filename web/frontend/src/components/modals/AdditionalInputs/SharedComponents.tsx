@@ -35,16 +35,28 @@ export function Input({
   placeholder = "",
   readOnly = false,
   style,
+  type = "text",
+  min,
+  max,
+  step,
 }: {
-  value: string;
+  value: string | number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   placeholder?: string;
   readOnly?: boolean;
   style?: React.CSSProperties;
+  type?: string;
+  min?: number;
+  max?: number;
+  step?: number | string;
 }) {
   return (
     <input
+      type={type}
+      min={min}
+      max={max}
+      step={step}
       value={value}
       onChange={onChange}
       disabled={disabled}

@@ -1067,11 +1067,11 @@ export default function GirderDetailsTab({
             data={{
               ...girderDetails,
               ...currentSegment,
-              type_combo: girderDetails.type || "Welded",
-              symmetry_combo: currentSegment.symmetry || "Girder Symmetric",
-              total_depth_input: currentSegment.depth ?? currentSegment.total_depth_mm ?? "",
-              top_width_input: currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? "",
-              bottom_width_input: ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") 
+              type: girderDetails.type || "Welded",
+              symmetry: currentSegment.symmetry || "Girder Symmetric",
+              depth: currentSegment.depth ?? currentSegment.total_depth_mm ?? "",
+              top_flange_width: currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? "",
+              bottom_flange_width: ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") 
                 ? (currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? "")
                 : (currentSegment.bottom_flange_width ?? currentSegment.bottom_flange_width_mm ?? ""),
               top_thickness_combo: currentSegment.top_flange_thickness_mode ?? currentSegment.top_thickness_mode ?? "All",
@@ -1082,28 +1082,28 @@ export default function GirderDetailsTab({
               bottom_thickness_value_input: ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric")
                 ? (currentSegment.top_flange_thickness_value ?? currentSegment.top_thickness_value_mm ?? "20")
                 : (currentSegment.bottom_flange_thickness_value ?? currentSegment.bottom_thickness_value_mm ?? "20"),
-              support_type_combo: girderDetails.support_type || currentSegment.support_type || "Major Laterally Supported",
-              support_width_input: girderDetails.support_width ?? girderDetails.support_width_mm ?? currentSegment.support_width ?? currentSegment.support_width_mm ?? "500",
+              support_type: girderDetails.support_type || currentSegment.support_type || "Major Laterally Supported",
+              support_width: girderDetails.support_width ?? girderDetails.support_width_mm ?? currentSegment.support_width ?? currentSegment.support_width_mm ?? "500",
               web_thickness_combo: currentSegment.web_thickness_mode ?? "All",
               web_thickness_value_input: currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? "12",
-              web_type_combo: girderDetails.web_type || currentSegment.web_type || "Thick Web without ITS",
-              is_section_combo: currentSegment.is_section || "MB 500",
-              torsion_combo: girderDetails.torsional_restraint || "Fully Restrained",
-              warping_combo: girderDetails.warping_restraint || "Both Flanges Restrained",
+              web_type: girderDetails.web_type || currentSegment.web_type || "Thick Web without ITS",
+              is_section: currentSegment.is_section || "MB 500",
+              torsional_restraint: girderDetails.torsional_restraint || "Fully Restrained",
+              warping_restraint: girderDetails.warping_restraint || "Both Flanges Restrained",
             }}
             onChange={(fieldId, value) => {
               // Legacy Payload Field Bindings
-              if (fieldId === "total_depth_input") {
+              if (fieldId === "depth") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "depth", value);
                 updateGirderField(selectedGirder, safeSegmentIndex, "total_depth_mm", value);
-              } else if (fieldId === "top_width_input") {
+              } else if (fieldId === "top_flange_width") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width", value);
                 updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_width_mm", value);
                 if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
                   updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width", value);
                   updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width_mm", value);
                 }
-              } else if (fieldId === "bottom_width_input") {
+              } else if (fieldId === "bottom_flange_width") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width", value);
                 updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_width_mm", value);
                 if ((currentSegment.symmetry || "Girder Symmetric") === "Girder Symmetric") {
@@ -1127,12 +1127,12 @@ export default function GirderDetailsTab({
               } else if (fieldId === "web_thickness_value_input") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_value", value);
                 updateGirderField(selectedGirder, safeSegmentIndex, "web_thickness_value_mm", value);
-              } else if (fieldId === "support_width_input") {
+              } else if (fieldId === "support_width") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "support_width", value);
                 updateGirderField(selectedGirder, safeSegmentIndex, "support_width_mm", value);
-              } else if (fieldId === "type_combo") {
+              } else if (fieldId === "type") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "type", value);
-              } else if (fieldId === "symmetry_combo") {
+              } else if (fieldId === "symmetry") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "symmetry", value);
                 if (value === "Girder Symmetric") {
                   const topW = currentSegment.top_flange_width ?? currentSegment.top_flange_width_mm ?? "";
@@ -1143,15 +1143,15 @@ export default function GirderDetailsTab({
                   updateGirderField(selectedGirder, safeSegmentIndex, "bottom_flange_thickness_value", topThick);
                   updateGirderField(selectedGirder, safeSegmentIndex, "bottom_thickness_value_mm", topThick);
                 }
-              } else if (fieldId === "is_section_combo") {
+              } else if (fieldId === "is_section") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "is_section", value);
-              } else if (fieldId === "torsion_combo") {
+              } else if (fieldId === "torsional_restraint") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "torsional_restraint", value);
-              } else if (fieldId === "warping_combo") {
+              } else if (fieldId === "warping_restraint") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "warping_restraint", value);
-              } else if (fieldId === "web_type_combo") {
+              } else if (fieldId === "web_type") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "web_type", value);
-              } else if (fieldId === "support_type_combo") {
+              } else if (fieldId === "support_type") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "support_type", value);
               } else if (fieldId === "top_thickness_combo") {
                 updateGirderField(selectedGirder, safeSegmentIndex, "top_flange_thickness_mode", value);
@@ -1178,11 +1178,11 @@ export default function GirderDetailsTab({
                 if (value === "Custom") {
                   handleOpenThicknessDialog("web_thickness_value", currentSegment.web_thickness_value ?? currentSegment.web_thickness_value_mm ?? "");
                 }
-              } else if (fieldId === "total_depth_input_bounds_click") {
+              } else if (fieldId === "depth_bounds_click") {
                 handleOpenBoundsDialog("total_depth");
-              } else if (fieldId === "top_width_input_bounds_click") {
+              } else if (fieldId === "top_flange_width_bounds_click") {
                 handleOpenBoundsDialog("top_flange_width");
-              } else if (fieldId === "bottom_width_input_bounds_click") {
+              } else if (fieldId === "bottom_flange_width_bounds_click") {
                 handleOpenBoundsDialog("bottom_flange_width");
               }
             }}

@@ -29,10 +29,27 @@ export function DynamicSchemaRenderer({
   return (
     <div style={{ display: "grid", gridTemplateColumns: gridStyle?.gridTemplateColumns || "160px minmax(150px, max-content)", gap: "10px 14px", alignItems: "center", ...gridStyle }}>
       {fields.map((field: any, fieldIdx: number) => {
-        const fieldId = field.bind || field.id;
+        const fieldId = field.id || field.bind;
         let value = data[fieldId];
         if (value === undefined && field.default !== undefined) {
           value = field.default;
+        }
+
+        let inputType = "text";
+        let min, max, step;
+        if (field.validator) {
+          if (field.validator.type === "double_range" || field.validator.type === "int_range") {
+            inputType = "number";
+            min = field.validator.bottom;
+            max = field.validator.top;
+            if (field.validator.decimals !== undefined) {
+              step = 1 / Math.pow(10, field.validator.decimals);
+            } else if (field.validator.type === "int_range") {
+              step = 1;
+            } else {
+              step = "any";
+            }
+          }
         }
 
         // Hide field if disabled via schema property, global disabled prop, or specific fieldDisabled map
@@ -77,6 +94,10 @@ export function DynamicSchemaRenderer({
             inputElement = (
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <Input
+                  type={inputType}
+                  min={min}
+                  max={max}
+                  step={step}
                   value={value ?? ""}
                   onChange={(e) => onChange(fieldId, e.target.value)}
                   disabled={isFieldDisabled} 
@@ -135,7 +156,6 @@ export function DynamicSchemaRenderer({
 
            // If it has bind_value, it expects the pair layout (like in Loading tabs)
            if (field.thickness_key || field.type === "mode_value") {
-             const isWelded = (data["type_combo"] || "Welded").toLowerCase() === "welded";
              const isOptimized = isOptimizedMode;
              
              if (isOptimized) {
@@ -151,15 +171,15 @@ export function DynamicSchemaRenderer({
                          }
                        }}
                        options={field.mode_choices || ["All", "Custom"]}
-                       disabled={isFieldDisabled || !isWelded}
+                       disabled={isFieldDisabled}
                        style={{ width: field.mode_width || 180 }}
                      />
                      {modeValue === "Custom" && (
                        <Select
                          value={textValue || "12"}
                          onChange={(e) => onChange(valueId, e.target.value)}
-                         options={data.thickness_values_mm || ["8", "10", "12", "14", "16", "18", "20", "22", "25", "28", "32", "36", "40", "45", "50", "56", "63", "75", "80", "90", "100", "110", "120"]}
-                         disabled={isFieldDisabled || !isWelded}
+                         options={data.thickness_values_mm || field.choices || []}
+                         disabled={isFieldDisabled}
                          style={{ width: field.value_width || 180 }}
                        />
                      )}
@@ -172,22 +192,20 @@ export function DynamicSchemaRenderer({
                       value={modeValue}
                       onChange={(e) => onChange(modeId, e.target.value)}
                       options={field.mode_choices || ["All", "Custom"]}
-                      disabled={isFieldDisabled || !isWelded}
+                      disabled={isFieldDisabled}
                       style={{ width: field.mode_width || 180 }}
                    />
                  );
                }
              } else {
-               // Custom mode: Show ONLY the SAIL values dropdown
-               const valueChoices = data.thickness_values_mm || ["8", "10", "12", "14", "16", "18", "20", "22", "25", "28", "32", "36", "40", "45", "50", "56", "63", "75", "80", "90", "100", "110", "120"];
-               // Ensure mode is set to 'Custom' in the background if it isn't already,
-               // but we just render the value dropdown here.
+               // Custom mode: Show ONLY the value dropdown
+               const valueChoices = data.thickness_values_mm || field.choices || [];
                inputElement = (
                  <Select
                     value={textValue}
                     onChange={(e) => onChange(valueId, e.target.value)}
                     options={valueChoices}
-                    disabled={isFieldDisabled || !isWelded}
+                    disabled={isFieldDisabled}
                     style={{ width: field.value_width || 180 }}
                  />
                );
@@ -204,6 +222,10 @@ export function DynamicSchemaRenderer({
                     style={{ width: field.mode_width || 120 }}
                  />
                  <Input
+                    type={inputType}
+                    min={min}
+                    max={max}
+                    step={step}
                     value={textValue}
                     onChange={(e) => onChange(valueId, e.target.value)}
                     disabled={isValueDisabled}
@@ -228,7 +250,7 @@ export function DynamicSchemaRenderer({
              } else {
                // Custom mode: Show the actual value input or dropdown
                if (field.type === "mode_value") {
-                 const valueChoices = data.thickness_values_mm || ["8", "10", "12", "14", "16", "18", "20", "22", "25", "28", "32", "36", "40", "45", "50", "56", "63", "75", "80", "90", "100", "110", "120"];
+                 const valueChoices = data.thickness_values_mm || field.choices || [];
                  inputElement = (
                     <Select
                       value={textValue}
@@ -239,6 +261,10 @@ export function DynamicSchemaRenderer({
                } else {
                  inputElement = (
                     <Input
+                      type={inputType}
+                      min={min}
+                      max={max}
+                      step={step}
                       value={textValue}
                       onChange={(e) => onChange(valueId, e.target.value)}
                       readOnly={field.read_only}
@@ -262,9 +288,12 @@ export function DynamicSchemaRenderer({
               {field.text || field.label}
             </button>
           );
-        } else if (field.type === "number") {
           inputElement = (
             <Input
+              type={inputType}
+              min={min}
+              max={max}
+              step={step}
               value={value ?? ""}
               onChange={(e) => onChange(fieldId, e.target.value)}
               disabled={isFieldDisabled}
@@ -278,11 +307,33 @@ export function DynamicSchemaRenderer({
                   return <span key={i} style={{ fontSize: 12, fontWeight: 600, marginRight: rf.after_spacing ? 10 : 0 }}>{rf.label}</span>;
                 }
                 if (rf.type === "line" || rf.type === "number") {
-                  const rfId = rf.bind || rf.id;
+                  const rfId = rf.id || rf.bind;
                   const rfValue = data[rfId] ?? rf.default ?? "";
+                  
+                  let rfInputType = "text";
+                  let rfMin, rfMax, rfStep;
+                  if (rf.validator) {
+                    if (rf.validator.type === "double_range" || rf.validator.type === "int_range") {
+                      rfInputType = "number";
+                      rfMin = rf.validator.bottom;
+                      rfMax = rf.validator.top;
+                      if (rf.validator.decimals !== undefined) {
+                        rfStep = 1 / Math.pow(10, rf.validator.decimals);
+                      } else if (rf.validator.type === "int_range") {
+                        rfStep = 1;
+                      } else {
+                        rfStep = "any";
+                      }
+                    }
+                  }
+
                   return (
                     <Input
                       key={i}
+                      type={rfInputType}
+                      min={rfMin}
+                      max={rfMax}
+                      step={rfStep}
                       value={rfValue}
                       onChange={(e) => onChange(rfId, e.target.value)}
                       disabled={disabled}
@@ -295,9 +346,12 @@ export function DynamicSchemaRenderer({
             </div>
           );
         } else {
-          // Fallback
           inputElement = (
             <Input
+              type={inputType}
+              min={min}
+              max={max}
+              step={step}
               value={value ?? ""}
               onChange={(e) => onChange(fieldId, e.target.value)}
               disabled={isFieldDisabled}

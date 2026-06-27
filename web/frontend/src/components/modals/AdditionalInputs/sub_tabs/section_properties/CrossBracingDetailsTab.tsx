@@ -539,43 +539,43 @@ export default function CrossBracingDetailsTab({
               <DynamicSchemaRenderer
                 fields={(schema.section_inputs || []).filter((f: any) => f.id !== "design")}
                 data={{
-                  design_combo: designMode,
-                  bracing_type_combo: brace.bracing_type || "K-Bracing",
-                  bracing_section_type_combo: brace.bracing_section_type || "Angle",
-                  bracing_section_combo: brace.bracing_section || "ISA 5050x6",
-                  bracing_section_combo_options: sectionOptionsFor(brace.bracing_section_type || "Angle"),
-                  top_chord_checkbox: !!brace.top_chord_enabled,
-                  top_chord_type_combo: brace.top_chord_type || "Angle",
-                  top_chord_size_combo: brace.top_chord_size || "ISA 5050x6",
-                  top_chord_size_combo_options: sectionOptionsFor(brace.top_chord_type || "Angle"),
-                  bottom_chord_checkbox: effectiveBottomEnabled,
-                  bottom_chord_type_combo: brace.bottom_chord_type || "Angle",
-                  bottom_chord_size_combo: brace.bottom_chord_size || "ISA 5050x6",
-                  bottom_chord_size_combo_options: sectionOptionsFor(brace.bottom_chord_type || "Angle"),
-                  spacing_input: String(brace.spacing || "3"),
+                  design: designMode,
+                  bracing_type: brace.bracing_type || "K-Bracing",
+                  bracing_section_type: brace.bracing_section_type || "Angle",
+                  bracing_section: brace.bracing_section || "ISA 5050x6",
+                  bracing_section_options: sectionOptionsFor(brace.bracing_section_type || "Angle"),
+                  top_chord_enabled: !!brace.top_chord_enabled,
+                  top_chord_type: brace.top_chord_type || "Angle",
+                  top_chord_size: brace.top_chord_size || "ISA 5050x6",
+                  top_chord_size_options: sectionOptionsFor(brace.top_chord_type || "Angle"),
+                  bottom_chord_enabled: effectiveBottomEnabled,
+                  bottom_chord_type: brace.bottom_chord_type || "Angle",
+                  bottom_chord_size: brace.bottom_chord_size || "ISA 5050x6",
+                  bottom_chord_size_options: sectionOptionsFor(brace.bottom_chord_type || "Angle"),
+                  spacing: String(brace.spacing || "3"),
                 }}
                 onChange={(fieldId, value) => {
-                  if (fieldId === "design_combo") setDesignMode(value as "Optimized" | "Custom");
-                  else if (fieldId === "bracing_type_combo") handleBracingTypeChange(value);
-                  else if (fieldId === "bracing_section_type_combo") updateBracingField(selectedPair, "bracing_section_type", value);
-                  else if (fieldId === "bracing_section_combo") updateBracingField(selectedPair, "bracing_section", value);
-                  else if (fieldId === "top_chord_checkbox") handleTopChordToggle(value);
-                  else if (fieldId === "top_chord_type_combo") updateBracingField(selectedPair, "top_chord_type", value);
-                  else if (fieldId === "top_chord_size_combo") updateBracingField(selectedPair, "top_chord_size", value);
-                  else if (fieldId === "bottom_chord_checkbox") handleBottomChordToggle(value);
-                  else if (fieldId === "bottom_chord_type_combo") updateBracingField(selectedPair, "bottom_chord_type", value);
-                  else if (fieldId === "bottom_chord_size_combo") updateBracingField(selectedPair, "bottom_chord_size", value);
-                  else if (fieldId === "spacing_input") updateBracingField(selectedPair, "spacing", value);
+                  if (fieldId === "design") setDesignMode(value as "Optimized" | "Custom");
+                  else if (fieldId === "bracing_type") handleBracingTypeChange(value);
+                  else if (fieldId === "bracing_section_type") updateBracingField(selectedPair, "bracing_section_type", value);
+                  else if (fieldId === "bracing_section") updateBracingField(selectedPair, "bracing_section", value);
+                  else if (fieldId === "top_chord_enabled") handleTopChordToggle(value);
+                  else if (fieldId === "top_chord_type") updateBracingField(selectedPair, "top_chord_type", value);
+                  else if (fieldId === "top_chord_size") updateBracingField(selectedPair, "top_chord_size", value);
+                  else if (fieldId === "bottom_chord_enabled") handleBottomChordToggle(value);
+                  else if (fieldId === "bottom_chord_type") updateBracingField(selectedPair, "bottom_chord_type", value);
+                  else if (fieldId === "bottom_chord_size") updateBracingField(selectedPair, "bottom_chord_size", value);
+                  else if (fieldId === "spacing") updateBracingField(selectedPair, "spacing", value);
                 }}
                 isOptimizedMode={!isCustom}
                 fieldDisabled={{
-                  bracing_section_type_combo: !isCustom,
-                  bracing_section_combo: !isCustom,
-                  top_chord_type_combo: !isCustom || !brace.top_chord_enabled,
-                  top_chord_size_combo: !isCustom || !brace.top_chord_enabled,
-                  bottom_chord_checkbox: isKBracing,
-                  bottom_chord_type_combo: !isCustom || !effectiveBottomEnabled,
-                  bottom_chord_size_combo: !isCustom || !effectiveBottomEnabled,
+                  bracing_section_type: !isCustom,
+                  bracing_section: !isCustom,
+                  top_chord_type: !isCustom || !brace.top_chord_enabled,
+                  top_chord_size: !isCustom || !brace.top_chord_enabled,
+                  bottom_chord_enabled: isKBracing,
+                  bottom_chord_type: !isCustom || !effectiveBottomEnabled,
+                  bottom_chord_size: !isCustom || !effectiveBottomEnabled,
                 }}
               />
             ) : (

@@ -351,141 +351,7 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
   const { svgUrl, hasDesigned, bridgeData, setBridgeData, setSvgUrl, bridgeInput, designMode } =
     useBridgeStore();
 
-  const [form, setForm] = useState<Record<string, any>>({
-    // Typical Section
-    girderSpacing:      "",
-    noOfGirders:        "",
-    deckOverhangWidth:  "",
-    overallBridgeWidth: "",
-    deckThickness:      "",
-    footpathThickness:  "",
-    footpathWidth:      "",
-    crashBarrierWidth:  "",
-    crashBarrierType:   "",
-    railingType:        "",
-    railingWidth:       "",
-    railingHeight:      "",
-    medianPresent:      false,
-    medianWidth:        "",
-    medianType:         "",
-    wearingCourseThickness: "",
-
-    // Loading - Permanent
-    self_weight_factor_input: "1.00",
-
-    // Loading - Live Load
-    irc_vehicle_checkboxes: {
-      "Class A": true,
-      "Class 70R Wheeled": true,
-      "Class 70R Tracked": true,
-      "Class AA Wheeled": true,
-      "Class AA Tracked": true,
-      "Class SV": true,
-      "Class 70R Bogie": true,
-    },
-    custom_vehicle_table: {} as Record<string, any>,
-    footpath_mode_combo: "Automatic",
-    footpath_value_input: "5.00",
-    braking_vehicle_checkboxes: { "Class SV": true },
-    eccentricity_input: "0.00",
-
-    // Loading - Seismic
-    seismic_zone_combo: "",
-    importance_factor_input: "1.0",
-    soil_type_combo: "Type I \u2013 Rocky or Hard",
-    time_period_input: "",
-    damping_input: "2",
-    response_factor_combo: "1",
-    dead_load_seismic_combo: "Automatic",
-    dead_load_custom_input: "",
-    live_load_seismic_combo: "Automatic",
-    live_load_custom_input: "",
-
-    // Loading - Wind
-    basic_wind_speed: "",
-    avg_exposed_height_input: "10",
-    terrain_type_combo: "Plain Terrain",
-    site_topography_combo: "Flat",
-    gust_factor_combo: "As per Code",
-    gust_factor_value: "",
-    drag_coeff_combo: "As per Code",
-    drag_coeff_value: "",
-    drag_coeff_ll_combo: "As per Code",
-    drag_coeff_ll_value: "",
-    lift_coeff_combo: "As per Code",
-    lift_coeff_value: "",
-    super_area_elev_combo: "Automatic",
-    super_area_elev_value: "",
-    super_area_plain_combo: "Automatic",
-    super_area_plain_value: "",
-    exposed_frontal_area_combo: "Automatic",
-    exposed_frontal_area_value: "",
-    wind_ecc_deck_combo: "As per Code",
-    wind_ecc_deck_value: "",
-    wind_ll_ecc_combo: "As per Code",
-    wind_ll_ecc_value: "",
-
-    // Loading - Temperature
-    highest_max_temp_input: "",
-    lowest_min_temp_input: "",
-    thermal_coeff_steel_input: "12.0e-6",
-    thermal_coeff_rcc_input: "12.0e-6",
-    bridge_temp_min_input: "",
-    bridge_temp_max_input: "",
-    temp_rise_input: "",
-    temp_fall_input: "",
-
-    // Loading - Custom
-    customLoads: [],
-
-    // Loading - Combinations
-    loadCombinations: {},
-
-    // Support Conditions
-    leftSupport: "Pinned",
-    rightSupport: "Roller",
-    bearingLength: "400",
-
-    // Design Options
-    construction_stage_combo: "Yes",
-    reinforcement_material_combo: "Fe 500",
-    reinforcementBounds: { lower: 8, upper: 40 },
-    top_clear_cover_input: "50",
-    bottom_clear_cover_input: "40",
-    side_clear_cover_input: "40",
-    shear_stud_yield_strength_input: "385.00",
-    shear_stud_ultimate_strength_input: "495.00",
-    shear_stud_diameter_combo: "20",
-    shear_stud_height_input: "100.00",
-    shear_stud_count_combo: "2",
-    shear_stud_spacing_input: "100.00",
-
-    // Design Options (Cont.)
-    gamma_c_basic_input: "1.50",
-    gamma_c_accidental_input: "1.20",
-    gamma_m0_input: "1.10",
-    gamma_m1_input: "1.25",
-    gamma_s_input: "1.15",
-    gamma_v_input: "1.25",
-    gamma_flt_input: "1.00",
-    gamma_mf_input: "1.35",
-    load_cycles_input: "2000000.00",
-    limit_input: "600.00",
-    ultimate_checkboxes: {
-      "Bending Resistance": true,
-      "Resistance to Vertical Shear": true,
-      "Resistance to Lateral-torsional Buckling": true,
-      "Resistance to Transverse force": true,
-      "Resistance to Longitudinal Shear": true,
-      "Resistance to Fatigue": true,
-    },
-    service_checkboxes: {
-      "Stress Limitation": true,
-      "Longitudinal Shear (SLS)": true,
-      "Deflection Control": true,
-      "Crack Width Check": true,
-    },
-  });
+  const [form, setForm] = useState<Record<string, any>>({});
 
   const [memberProps, setMemberProps] = useState<any>({});
 
@@ -542,92 +408,99 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open || !bridgeData) return;
-    setForm((prev: Record<string, any>) => ({
-      ...prev,
-      // Typical Section
-      girder_spacing:      String(bridgeData.girder_spacing      ?? "4"),
-      no_of_girders:        String(bridgeData.no_of_girders       ?? "4"),
-      deck_overhang:  String(bridgeData.deck_overhang_width ?? "1"),
-      overall_bridge_width_display: String(bridgeData.overall_bridge_width ?? "12"),
-      deck_thickness:      String(bridgeData.deck_thickness      ?? "250"),
-      footpath_thickness:  String(bridgeData.footpath_thickness  ?? "150"),
-      footpath_width:      String(bridgeData.footpath_width      ?? "1.5"),
 
-      crash_barrier_width:  String(bridgeData.crash_barrier_width ?? "500"),
-      crash_barrier_type:   String(bridgeData.crash_barrier_type  ?? "PL-1"),
-      crash_barrier_density: String(bridgeData.crash_barrier_density ?? "24"),
-      crash_barrier_height: String(bridgeData.crash_barrier_height ?? "1.0"),
-      crash_barrier_area: String(bridgeData.crash_barrier_area ?? "0.5"),
-      crash_barrier_load: String(bridgeData.crash_barrier_load ?? "12"),
-      crash_barrier_post_spacing: String(bridgeData.crash_barrier_post_spacing ?? "1"),
+    import("../../services/schemaService").then((service) => {
+      service.fetchAllSchemas().then((schemas) => {
+        const schemaDefaults = service.extractSchemaDefaults(schemas);
+        setForm((prev: Record<string, any>) => ({
+          ...schemaDefaults,
+          ...prev,
+          // Typical Section
+          girder_spacing:      String(bridgeData.girder_spacing      ?? schemaDefaults.girder_spacing ?? "4"),
+          no_of_girders:        String(bridgeData.no_of_girders       ?? schemaDefaults.no_of_girders ?? "4"),
+          deck_overhang:  String(bridgeData.deck_overhang_width ?? schemaDefaults.deck_overhang ?? "1"),
+          overall_bridge_width_display: String(bridgeData.overall_bridge_width ?? schemaDefaults.overall_bridge_width_display ?? "12"),
+          deck_thickness:      String(bridgeData.deck_thickness      ?? schemaDefaults.deck_thickness ?? "250"),
+          footpath_thickness:  String(bridgeData.footpath_thickness  ?? schemaDefaults.footpath_thickness ?? "150"),
+          footpath_width:      String(bridgeData.footpath_width      ?? schemaDefaults.footpath_width ?? "1.5"),
 
-      railing_type:        String(bridgeData.railing_type        ?? "IRC 5 - RCC Railing"),
-      railing_width:       String(bridgeData.railing_width       ?? "375"),
-      railing_height:      String(bridgeData.railing_height      ?? "1000"),
-      railing_load_mode:   "Automatic (IRC 6)",
-      railing_load_value:  "",
+          crash_barrier_width:  String(bridgeData.crash_barrier_width ?? schemaDefaults.crash_barrier_width ?? "500"),
+          crash_barrier_type:   String(bridgeData.crash_barrier_type  ?? schemaDefaults.crash_barrier_type ?? "PL-1"),
+          crash_barrier_density: String(bridgeData.crash_barrier_density ?? schemaDefaults.crash_barrier_density ?? "24"),
+          crash_barrier_height: String(bridgeData.crash_barrier_height ?? schemaDefaults.crash_barrier_height ?? "1.0"),
+          crash_barrier_area: String(bridgeData.crash_barrier_area ?? schemaDefaults.crash_barrier_area ?? "0.5"),
+          crash_barrier_load: String(bridgeData.crash_barrier_load ?? schemaDefaults.crash_barrier_load ?? "12"),
+          crash_barrier_post_spacing: String(bridgeData.crash_barrier_post_spacing ?? schemaDefaults.crash_barrier_post_spacing ?? "1"),
 
-      median_width:        String(bridgeData.median_width        ?? "1200"),
-      median_type:         String(bridgeData.median_type         ?? "Raised"),
-      median_density:      String(bridgeData.median_density ?? "24"),
-      median_height:       "0.5",
-      median_area:         "0.6",
-      median_load:         "14.4",
-      median_post_spacing: "1",
+          railing_type:        String(bridgeData.railing_type        ?? schemaDefaults.railing_type ?? "IRC 5 - RCC Railing"),
+          railing_width:       String(bridgeData.railing_width       ?? schemaDefaults.railing_width ?? "375"),
+          railing_height:      String(bridgeData.railing_height      ?? schemaDefaults.railing_height ?? "1000"),
+          railing_load_mode:   "Automatic (IRC 6)",
+          railing_load_value:  "",
 
-      wearing_material:    String(bridgeData.wearing_course_type ?? "Asphalt"),
-      wearing_density:     "22",
-      wearing_thickness: String(bridgeData.wearing_course_thickness ?? "50"),
-      lane_count_combo:    "3",
+          median_width:        String(bridgeData.median_width        ?? schemaDefaults.median_width ?? "1200"),
+          median_type:         String(bridgeData.median_type         ?? schemaDefaults.median_type ?? "Raised"),
+          median_density:      String(bridgeData.median_density ?? schemaDefaults.median_density ?? "24"),
+          median_height:       "0.5",
+          median_area:         "0.6",
+          median_load:         "14.4",
+          median_post_spacing: "1",
 
-      // Loading
-      self_weight_factor_input: String((bridgeData as any).self_weight_factor ?? "1.00"),
-      irc_vehicle_checkboxes:   (bridgeData as any).live_load_vehicles ?? prev.irc_vehicle_checkboxes,
-      custom_vehicle_table:     (bridgeData as any).live_load_vehicles_custom ?? {},
-      braking_vehicle_checkboxes: (bridgeData as any).braking_vehicles ?? { "Class SV": true },
-      eccentricity_input: String((bridgeData as any).eccentricity ?? "0.00"),
-      footpath_mode_combo: String((bridgeData as any).footpath_mode ?? "Automatic"),
-      seismic_zone_combo: String((bridgeData as any).seismic_zone ?? ""),
-      importance_factor_input: String((bridgeData as any).importance_factor ?? "1.0"),
-      soil_type_combo:    String((bridgeData as any).soil_type ?? "Type I \u2013 Rocky or Hard"),
-      time_period_input:  String((bridgeData as any).time_period ?? ""),
-      damping_input:      String((bridgeData as any).damping_percentage ?? "2"),
-      response_factor_combo: String((bridgeData as any).response_factor ?? "1"),
-      customLoads:        (bridgeData as any).custom_loads ?? [],
-      loadCombinations:   (bridgeData as any).load_combinations ?? {},
+          wearing_material:    String(bridgeData.wearing_course_type ?? schemaDefaults.wearing_material ?? "Asphalt"),
+          wearing_density:     "22",
+          wearing_thickness: String(bridgeData.wearing_course_thickness ?? schemaDefaults.wearing_thickness ?? "50"),
+          lane_count_combo:    "3",
 
-      // Support Conditions
-      leftSupport:        String((bridgeData as any).left_support   ?? "Pinned"),
-      rightSupport:       String((bridgeData as any).right_support  ?? "Roller"),
-      bearingLength:      String((bridgeData as any).bearing_length ?? "400"),
+          // Loading
+          self_weight_factor_input: String((bridgeData as any).self_weight_factor ?? schemaDefaults.self_weight_factor_input ?? "1.00"),
+          irc_vehicle_checkboxes:   (bridgeData as any).live_load_vehicles ?? prev.irc_vehicle_checkboxes ?? schemaDefaults.irc_vehicle_checkboxes,
+          custom_vehicle_table:     (bridgeData as any).live_load_vehicles_custom ?? {},
+          braking_vehicle_checkboxes: (bridgeData as any).braking_vehicles ?? { "Class SV": true },
+          eccentricity_input: String((bridgeData as any).eccentricity ?? schemaDefaults.eccentricity_input ?? "0.00"),
+          footpath_mode_combo: String((bridgeData as any).footpath_mode ?? schemaDefaults.footpath_mode_combo ?? "Automatic"),
+          seismic_zone_combo: String((bridgeData as any).seismic_zone ?? schemaDefaults.seismic_zone_combo ?? ""),
+          importance_factor_input: String((bridgeData as any).importance_factor ?? schemaDefaults.importance_factor_input ?? "1.0"),
+          soil_type_combo:    String((bridgeData as any).soil_type ?? schemaDefaults.soil_type_combo ?? "Type I \u2013 Rocky or Hard"),
+          time_period_input:  String((bridgeData as any).time_period ?? schemaDefaults.time_period_input ?? ""),
+          damping_input:      String((bridgeData as any).damping_percentage ?? schemaDefaults.damping_input ?? "2"),
+          response_factor_combo: String((bridgeData as any).response_factor ?? schemaDefaults.response_factor_combo ?? "1"),
+          customLoads:        (bridgeData as any).custom_loads ?? [],
+          loadCombinations:   (bridgeData as any).load_combinations ?? {},
 
-      // Design Options
-      construction_stage_combo:            String((bridgeData as any).construction_stage          ?? "Yes"),
-      reinforcement_material_combo:        String((bridgeData as any).reinforcement_material      ?? "Fe 500"),
-      top_clear_cover_input:               String((bridgeData as any).top_clear_cover             ?? "50"),
-      bottom_clear_cover_input:            String((bridgeData as any).bottom_clear_cover          ?? "40"),
-      side_clear_cover_input:              String((bridgeData as any).side_clear_cover            ?? "40"),
-      shear_stud_yield_strength_input:     String((bridgeData as any).shear_stud_yield_strength   ?? "385.00"),
-      shear_stud_ultimate_strength_input:  String((bridgeData as any).shear_stud_ultimate_strength ?? "495.00"),
-      shear_stud_diameter_combo:           String((bridgeData as any).shear_stud_diameter         ?? "20"),
-      shear_stud_height_input:             String((bridgeData as any).shear_stud_height           ?? "100.00"),
-      shear_stud_count_combo:              String((bridgeData as any).shear_stud_count            ?? "2"),
-      shear_stud_spacing_input:            String((bridgeData as any).shear_stud_transverse_spacing ?? "100.00"),
+          // Support Conditions
+          leftSupport:        String((bridgeData as any).left_support   ?? schemaDefaults.leftSupport ?? "Pinned"),
+          rightSupport:       String((bridgeData as any).right_support  ?? schemaDefaults.rightSupport ?? "Roller"),
+          bearingLength:      String((bridgeData as any).bearing_length ?? schemaDefaults.bearingLength ?? "400"),
 
-      // Design Options (Cont.)
-      gamma_c_basic_input:      String((bridgeData as any).gamma_c_basic     ?? "1.50"),
-      gamma_c_accidental_input: String((bridgeData as any).gamma_c_accidental ?? "1.20"),
-      gamma_m0_input:           String((bridgeData as any).gamma_m0          ?? "1.10"),
-      gamma_m1_input:           String((bridgeData as any).gamma_m1          ?? "1.25"),
-      gamma_s_input:            String((bridgeData as any).gamma_s           ?? "1.15"),
-      gamma_v_input:            String((bridgeData as any).gamma_v           ?? "1.25"),
-      gamma_flt_input:          String((bridgeData as any).gamma_flt         ?? "1.00"),
-      gamma_mf_input:           String((bridgeData as any).gamma_mf          ?? "1.35"),
-      load_cycles_input:        String((bridgeData as any).load_cycles       ?? "2000000.00"),
-      limit_input:              String((bridgeData as any).deflection_limit  ?? "600.00"),
-      ultimate_checkboxes:      (bridgeData as any).ultimate_limit_states    ?? prev.ultimate_checkboxes,
-      service_checkboxes:       (bridgeData as any).serviceability_limit_states ?? prev.service_checkboxes,
-    }));
+          // Design Options
+          construction_stage_combo:            String((bridgeData as any).construction_stage          ?? schemaDefaults.construction_stage_combo ?? "Yes"),
+          reinforcement_material_combo:        String((bridgeData as any).reinforcement_material      ?? schemaDefaults.reinforcement_material_combo ?? "Fe 500"),
+          top_clear_cover_input:               String((bridgeData as any).top_clear_cover             ?? schemaDefaults.top_clear_cover_input ?? "50"),
+          bottom_clear_cover_input:            String((bridgeData as any).bottom_clear_cover          ?? schemaDefaults.bottom_clear_cover_input ?? "40"),
+          side_clear_cover_input:              String((bridgeData as any).side_clear_cover            ?? schemaDefaults.side_clear_cover_input ?? "40"),
+          shear_stud_yield_strength_input:     String((bridgeData as any).shear_stud_yield_strength   ?? schemaDefaults.shear_stud_yield_strength_input ?? "385.00"),
+          shear_stud_ultimate_strength_input:  String((bridgeData as any).shear_stud_ultimate_strength ?? schemaDefaults.shear_stud_ultimate_strength_input ?? "495.00"),
+          shear_stud_diameter_combo:           String((bridgeData as any).shear_stud_diameter         ?? schemaDefaults.shear_stud_diameter_combo ?? "20"),
+          shear_stud_height_input:             String((bridgeData as any).shear_stud_height           ?? schemaDefaults.shear_stud_height_input ?? "100.00"),
+          shear_stud_count_combo:              String((bridgeData as any).shear_stud_count            ?? schemaDefaults.shear_stud_count_combo ?? "2"),
+          shear_stud_spacing_input:            String((bridgeData as any).shear_stud_transverse_spacing ?? schemaDefaults.shear_stud_spacing_input ?? "100.00"),
+
+          // Design Options (Cont.)
+          gamma_c_basic_input:      String((bridgeData as any).gamma_c_basic     ?? schemaDefaults.gamma_c_basic_input ?? "1.50"),
+          gamma_c_accidental_input: String((bridgeData as any).gamma_c_accidental ?? schemaDefaults.gamma_c_accidental_input ?? "1.20"),
+          gamma_m0_input:           String((bridgeData as any).gamma_m0          ?? schemaDefaults.gamma_m0_input ?? "1.10"),
+          gamma_m1_input:           String((bridgeData as any).gamma_m1          ?? schemaDefaults.gamma_m1_input ?? "1.25"),
+          gamma_s_input:            String((bridgeData as any).gamma_s           ?? schemaDefaults.gamma_s_input ?? "1.15"),
+          gamma_v_input:            String((bridgeData as any).gamma_v           ?? schemaDefaults.gamma_v_input ?? "1.25"),
+          gamma_flt_input:          String((bridgeData as any).gamma_flt         ?? schemaDefaults.gamma_flt_input ?? "1.00"),
+          gamma_mf_input:           String((bridgeData as any).gamma_mf          ?? schemaDefaults.gamma_mf_input ?? "1.35"),
+          load_cycles_input:        String((bridgeData as any).load_cycles       ?? schemaDefaults.load_cycles_input ?? "2000000.00"),
+          limit_input:              String((bridgeData as any).deflection_limit  ?? schemaDefaults.limit_input ?? "600.00"),
+          ultimate_checkboxes:      (bridgeData as any).ultimate_limit_states    ?? prev.ultimate_checkboxes ?? schemaDefaults.ultimate_checkboxes,
+          service_checkboxes:       (bridgeData as any).serviceability_limit_states ?? prev.service_checkboxes ?? schemaDefaults.service_checkboxes,
+        }));
+      });
+    });
 
     const initialMemberProps = normalizeMemberProperties(
       bridgeData.member_properties,
@@ -644,23 +517,23 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
     try {
       const payload = {
         ...bridgeData,
-        girder_spacing:       Number(currentForm.girderSpacing),
-        no_of_girders:        Number(currentForm.noOfGirders),
-        deck_overhang_width:  Number(currentForm.deckOverhangWidth),
-        overall_bridge_width: Number(currentForm.overallBridgeWidth),
-        deck_thickness:       Number(currentForm.deckThickness),
-        footpath_thickness:   Number(currentForm.footpathThickness),
-        footpath_width:       Number(currentForm.footpathWidth),
+        girder_spacing:       Number(currentForm.girder_spacing),
+        no_of_girders:        Number(currentForm.no_of_girders),
+        deck_overhang_width:  Number(currentForm.deck_overhang),
+        overall_bridge_width: Number(currentForm.overall_bridge_width_display),
+        deck_thickness:       Number(currentForm.deck_thickness),
+        footpath_thickness:   Number(currentForm.footpath_thickness),
+        footpath_width:       Number(currentForm.footpath_width),
 
-        crash_barrier_width:  Number(currentForm.crashBarrierWidth),
-        crash_barrier_type:   currentForm.crashBarrierType,
-        railing_type:         currentForm.railingType,
-        railing_width:        Number(currentForm.railingWidth),
-        railing_height:       Number(currentForm.railingHeight),
-        median_present:       currentForm.medianPresent,
-        median_width:         Number(currentForm.medianWidth),
-        median_type:          currentForm.medianType,
-        wearing_course_thickness: Number(currentForm.wearingCourseThickness),
+        crash_barrier_width:  Number(currentForm.crash_barrier_width),
+        crash_barrier_type:   currentForm.crash_barrier_type,
+        railing_type:         currentForm.railing_type,
+        railing_width:        Number(currentForm.railing_width),
+        railing_height:       Number(currentForm.railing_height),
+        median_present:       currentForm.median_type && currentForm.median_type !== "None" ? true : false,
+        median_width:         Number(currentForm.median_width),
+        median_type:          currentForm.median_type,
+        wearing_course_thickness: Number(currentForm.wearing_thickness),
 
         member_properties:    serializeMemberProperties(currentMemberProps),
       };
@@ -1223,7 +1096,7 @@ export default function AdditionalInputsModal({ open, onClose }: Props) {
                   </div>
                 )}
 
-                {hasDesigned && previewUrl ? (
+                {previewUrl ? (
                   <CrossSectionCanvas svgUrl={previewUrl} />
                 ) : (
                   <div style={{
