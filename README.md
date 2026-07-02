@@ -125,9 +125,9 @@ python src/osdagbridge/web/backend/manage.py runserver
 Frontend:
 
 ```bash
-cd src/osdagbridge/web/frontend
+cd web/frontend
 npm install
-npm start
+npm run dev
 ```
 
 ---
