@@ -116,13 +116,15 @@ python -m osdagbridge.desktop
 
 ### Web Application
 
-Backend:
+Backend (FastAPI):
 
 ```bash
-python src/osdagbridge/web/backend/manage.py runserver
+cd web/backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-Frontend:
+Frontend (React + Vite):
 
 ```bash
 cd web/frontend

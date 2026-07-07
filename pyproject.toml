@@ -51,17 +51,6 @@ cad = ["pythonocc-core>=7.6.0"]
 # Report generation
 report = ["pylatex>=1.4"]
 
-# Web backend (Django + DRF)
-web-backend = [
-  "Django>=4.2",
-  "djangorestframework>=3.14"
-]
-
-# Web frontend dev tools (not required for backend runtime)
-web-frontend = [
-  "nodejs-bin>=18.0",     # Optional if you want version-pinning
-]
-
 # Developer tools
 dev = [
   "pytest",
